@@ -1,0 +1,1580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PrintWatch — The Future of Printer Monitoring</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --blue:#2563eb; --blue-dark:#1d4ed8; --blue-light:#eff6ff;
+  --text:#0f172a; --sub:#64748b; --border:#e2e8f0;
+  --bg:#fff; --bg2:#f8fafc; --r:12px;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.06);
+  --sh-md:0 4px 6px rgba(0,0,0,.05),0 10px 40px rgba(0,0,0,.1);
+}
+html { scroll-behavior:smooth; }
+body { font-family:'Inter',system-ui,sans-serif; color:var(--text); background:var(--bg); line-height:1.6; overflow-x:hidden; }
+
+/* ── LOADER ── */
+#loader {
+  position:fixed; inset:0; background:#08080f; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+  transition:opacity .6s, visibility .6s;
+}
+#loader.hide { opacity:0; visibility:hidden; }
+.loader-ring {
+  width:48px; height:48px; border-radius:50%;
+  border:3px solid rgba(37,99,235,.2);
+  border-top-color:#2563eb;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── NAV ── */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(255,255,255,.88);
+  backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid rgba(226,232,240,.8);
+}
+.nav-inner {
+  max-width:1200px; margin:0 auto; padding:0 28px;
+  height:68px; display:flex; align-items:center; gap:36px;
+}
+.logo { font-size:21px; font-weight:900; color:var(--blue); text-decoration:none; letter-spacing:-.6px; flex-shrink:0; }
+.logo span { color:var(--text); }
+.nav-links { display:flex; gap:28px; list-style:none; flex:1; }
+.nav-links a { text-decoration:none; color:var(--sub); font-size:14px; font-weight:500; transition:color .15s; }
+.nav-links a:hover { color:var(--text); }
+.nav-right { display:flex; align-items:center; gap:14px; flex-shrink:0; }
+.nav-social { display:flex; gap:12px; }
+.nav-social a { color:var(--sub); display:flex; transition:color .15s; }
+.nav-social a:hover { color:var(--text); }
+.btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 22px; border-radius:8px; font-size:14px; font-weight:600;
+  text-decoration:none; cursor:pointer; border:none; font-family:inherit;
+  position:relative; overflow:hidden; z-index:0;
+  transition:transform .22s cubic-bezier(.2,.8,.3,1), box-shadow .22s, color .2s, background .2s;
+  -webkit-user-select:none; user-select:none;
+}
+/* shimmer sweep on all buttons */
+.btn::after {
+  content:''; position:absolute; top:0; left:-120%;
+  width:70%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+  transform:skewX(-20deg); pointer-events:none;
+  transition:left .55s cubic-bezier(.2,.8,.4,1);
+}
+.btn:hover::after { left:140%; }
+/* click ripple base */
+.btn .ripple {
+  position:absolute; border-radius:50%; transform:scale(0);
+  animation:rippleAnim .55s linear; pointer-events:none;
+  background:rgba(255,255,255,.3);
+}
+@keyframes rippleAnim { to { transform:scale(4); opacity:0; } }
+
+/* ── btn-primary ── */
+.btn-primary {
+  background:linear-gradient(135deg,#3b6ef0,#2563eb,#1b50d8);
+  background-size:200% 200%; background-position:0% 50%;
+  color:#fff;
+  box-shadow:0 2px 10px rgba(37,99,235,.4);
+  animation:primaryPulse 3s ease-in-out infinite;
+}
+@keyframes primaryPulse {
+  0%,100%{ box-shadow:0 2px 10px rgba(37,99,235,.4); }
+  50%    { box-shadow:0 4px 20px rgba(37,99,235,.65), 0 0 0 4px rgba(37,99,235,.1); }
+}
+.btn-primary:hover {
+  background-position:100% 50%;
+  transform:translateY(-3px) scale(1.03);
+  box-shadow:0 10px 32px rgba(37,99,235,.6), 0 0 0 5px rgba(37,99,235,.12);
+  animation:none;
+}
+.btn-primary:active { transform:translateY(0) scale(.97); box-shadow:0 2px 8px rgba(37,99,235,.3); animation:none; }
+
+/* ── btn-outline (animated gradient border + fill sweep) ── */
+.btn-outline {
+  background:transparent; color:var(--blue); border:none; padding:10px 22px;
+}
+.btn-outline::before {
+  content:''; position:absolute; inset:0; border-radius:inherit; padding:1.5px;
+  background:linear-gradient(90deg,#2563eb,#8b5cf6,#06b6d4,#2563eb);
+  background-size:300% 100%;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:destination-out; mask-composite:exclude;
+  animation:borderRun 2.5s linear infinite;
+}
+@keyframes borderRun { to { background-position:-300% 0; } }
+.btn-outline-fill {
+  position:absolute; inset:0; border-radius:inherit;
+  background:linear-gradient(135deg,#2563eb,#4f46e5);
+  transform:scaleX(0); transform-origin:left;
+  transition:transform .3s cubic-bezier(.4,0,.2,1); z-index:-1;
+}
+.btn-outline:hover .btn-outline-fill { transform:scaleX(1); }
+.btn-outline:hover { color:#fff; }
+.btn-outline:hover::before { opacity:0; transition:opacity .2s; }
+.btn-outline:active { transform:scale(.97); }
+
+/* ── HERO ── */
+#hero {
+  position:relative; min-height:100vh;
+  background:#06060e; overflow:hidden;
+  display:flex; align-items:center;
+}
+#hero-canvas {
+  position:absolute; inset:0; width:100%; height:100%;
+}
+.hero-gradient {
+  position:absolute; inset:0;
+  background:linear-gradient(105deg, rgba(6,6,14,.95) 0%, rgba(6,6,14,.75) 50%, rgba(6,6,14,.1) 100%);
+  pointer-events:none;
+}
+.hero-content {
+  position:relative; z-index:2;
+  max-width:1200px; margin:0 auto; padding:0 28px;
+  padding-top:80px; padding-bottom:80px;
+  width:100%;
+}
+.hero-text { max-width:580px; }
+.section-tag {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(37,99,235,.15); color:#93c5fd;
+  font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  padding:6px 14px; border-radius:100px; margin-bottom:24px;
+  border:1px solid rgba(37,99,235,.25);
+}
+.section-tag-dark { background:var(--blue-light); color:var(--blue); border:1px solid rgba(37,99,235,.15); }
+h1 { font-size:clamp(40px,5.5vw,68px); font-weight:900; line-height:1.06; letter-spacing:-2px; color:#fff; margin-bottom:24px; }
+h1 em { font-style:normal; background:linear-gradient(135deg,#60a5fa,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.hero-text p { font-size:18px; color:rgba(255,255,255,.65); line-height:1.75; margin-bottom:40px; }
+.hero-ctas { display:flex; gap:12px; flex-wrap:wrap; }
+.btn-hero { padding:14px 28px; font-size:15px; border-radius:10px; }
+
+/* ── btn-hero-outline ── */
+.btn-hero-outline {
+  background:rgba(255,255,255,.07); color:#fff;
+  border:1.5px solid rgba(255,255,255,.18);
+  backdrop-filter:blur(14px);
+}
+.btn-hero-outline::before { display:none; }
+.btn-hero-outline::after {
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+}
+.btn-hero-outline:hover {
+  background:rgba(255,255,255,.15);
+  border-color:rgba(255,255,255,.55);
+  transform:translateY(-3px) scale(1.03);
+  box-shadow:0 10px 30px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.07);
+}
+.btn-hero-outline:active { transform:translateY(0) scale(.97); }
+.hero-badge {
+  position:absolute; bottom:48px; right:48px; z-index:3;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(24px);
+  border-radius:16px; padding:20px 24px; min-width:240px;
+  display:none;
+}
+@media(min-width:900px){ .hero-badge { display:block; } }
+.badge-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.badge-icon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.badge-label { font-size:11px; color:rgba(255,255,255,.45); }
+.badge-val { font-size:16px; font-weight:700; color:#fff; line-height:1.2; }
+.badge-divider { height:1px; background:rgba(255,255,255,.08); margin-bottom:14px; }
+.mini-bars { display:flex; gap:4px; align-items:flex-end; height:36px; }
+.mini-bar { flex:1; border-radius:3px 3px 0 0; }
+
+/* ── BLOB BACKGROUNDS ── */
+.blobs { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+.blob {
+  position:absolute; border-radius:50%;
+  filter:blur(80px); opacity:.35;
+  animation:blobFloat 12s ease-in-out infinite alternate;
+}
+@keyframes blobFloat {
+  0% { transform:translate(0,0) scale(1); }
+  100% { transform:translate(30px,-40px) scale(1.08); }
+}
+
+/* ── SECTIONS ── */
+section { padding:100px 28px; }
+.container { max-width:1200px; margin:0 auto; }
+h2 { font-size:clamp(30px,4vw,48px); font-weight:800; line-height:1.12; letter-spacing:-1.2px; }
+h3 { font-size:18px; font-weight:700; }
+p.lead { font-size:18px; color:var(--sub); line-height:1.75; }
+p.sub { font-size:15px; color:var(--sub); line-height:1.75; }
+
+/* ── TRUST BAR ── */
+#trust { padding:32px 28px; background:var(--bg2); border-bottom:1px solid var(--border); }
+.trust-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:40px; flex-wrap:wrap; justify-content:center; }
+.trust-label { font-size:12px; font-weight:600; color:var(--sub); letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+.trust-logos { display:flex; gap:40px; align-items:center; flex-wrap:wrap; justify-content:center; }
+.trust-logo { font-size:16px; font-weight:800; color:var(--sub); opacity:.5; letter-spacing:-.3px; }
+
+/* ── ABOUT ── */
+#about { background:var(--bg2); }
+.about-inner { display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center; }
+.about-stats { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:40px; }
+.stat { background:#fff; border-radius:var(--r); padding:24px; box-shadow:var(--sh); }
+.stat-num { font-size:38px; font-weight:900; color:var(--blue); letter-spacing:-1px; line-height:1; }
+.stat-label { font-size:13px; color:var(--sub); margin-top:4px; }
+.ceo-card { display:flex; gap:16px; align-items:center; background:#fff; border-radius:var(--r); padding:20px 24px; box-shadow:var(--sh); margin-bottom:20px; }
+.ceo-av { width:56px; height:56px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,#3b82f6,#8b5cf6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; font-weight:800; }
+.ceo-av img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+.ceo-info strong { display:block; font-size:15px; }
+.ceo-info span { font-size:12px; color:var(--sub); }
+
+/* ── PROBLEMS ── */
+.problems-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-top:56px; }
+.problem-card {
+  background:#fff; border:1px solid var(--border); border-radius:var(--r); padding:28px 20px; text-align:center;
+  transition:all .25s; cursor:default; position:relative; overflow:hidden;
+}
+.problem-card::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg,transparent,rgba(37,99,235,.04));
+  opacity:0; transition:opacity .25s;
+}
+.problem-card:hover { box-shadow:var(--sh-md); transform:translateY(-4px); border-color:rgba(37,99,235,.2); }
+.problem-card:hover::before { opacity:1; }
+.p-icon { width:54px; height:54px; border-radius:14px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:24px; }
+.problem-card h3 { font-size:14px; margin-bottom:8px; }
+.problem-card p { font-size:12px; color:var(--sub); line-height:1.6; }
+
+/* ── FEATURES ── */
+#features { background:var(--bg2); }
+.features-header { text-align:center; max-width:600px; margin:0 auto 64px; }
+.features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+.feature-card {
+  background:#fff; border-radius:var(--r); padding:36px 30px; box-shadow:var(--sh);
+  transition:box-shadow .25s, transform .1s;
+  transform-style:preserve-3d; will-change:transform;
+  cursor:default;
+}
+.feature-card:hover { box-shadow:var(--sh-md); }
+.f-num { font-size:11px; font-weight:700; color:var(--blue); letter-spacing:.1em; margin-bottom:14px; }
+.f-icon { width:48px; height:48px; background:var(--blue-light); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; font-size:22px; }
+.feature-card h3 { margin-bottom:10px; }
+.feature-card p { font-size:14px; color:var(--sub); line-height:1.7; }
+
+/* ── NOTIFICATIONS ── */
+#notifications { background:linear-gradient(160deg,#060a14 0%,#0f1f4a 100%); position:relative; overflow:hidden; }
+#notifications .blobs .blob { animation-duration:16s; }
+.notif-inner { display:grid; grid-template-columns:1fr 1fr; gap:72px; align-items:center; position:relative; z-index:1; }
+#notifications .section-tag { background:rgba(96,165,250,.12); color:#93c5fd; border-color:rgba(96,165,250,.2); }
+#notifications h2 { color:#fff; }
+#notifications p.lead { color:#94a3b8; }
+.notif-list { display:flex; flex-direction:column; gap:14px; margin-top:36px; }
+.notif-item {
+  display:flex; gap:14px; align-items:flex-start;
+  background:rgba(255,255,255,.05); border-radius:10px; padding:16px;
+  border:1px solid rgba(255,255,255,.07); transition:all .2s;
+}
+.notif-item:hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.12); }
+.ndot { width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; box-shadow:0 0 8px; }
+.notif-item strong { display:block; font-size:14px; color:#f1f5f9; }
+.notif-item span { font-size:12px; color:#94a3b8; }
+.alert-panel {
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--r); padding:24px; display:flex; flex-direction:column; gap:10px;
+}
+.alert-card {
+  display:flex; align-items:center; gap:14px;
+  background:rgba(255,255,255,.06); border-radius:8px; padding:14px 16px;
+  border-left:3px solid; transition:all .2s;
+}
+.alert-card:hover { background:rgba(255,255,255,.1); }
+.alert-emoji { font-size:18px; flex-shrink:0; }
+.alert-body strong { display:block; font-size:13px; color:#f1f5f9; }
+.alert-body span { font-size:11px; color:#94a3b8; }
+.alert-time { margin-left:auto; font-size:11px; color:#475569; white-space:nowrap; }
+.panel-header { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#475569; margin-bottom:4px; }
+
+/* ── FUNCTIONS ── */
+.functions-header { text-align:center; max-width:580px; margin:0 auto 56px; }
+.functions-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.func-card {
+  border:1.5px solid var(--border); border-radius:var(--r); padding:26px;
+  cursor:pointer; transition:all .2s; background:var(--bg);
+}
+.func-card:hover { border-color:rgba(37,99,235,.3); box-shadow:0 0 0 1px rgba(37,99,235,.1); }
+.func-card.active { border-color:var(--blue); background:var(--blue-light); box-shadow:0 0 0 1px var(--blue); }
+.fn-icon { width:42px; height:42px; border-radius:10px; background:var(--bg2); display:flex; align-items:center; justify-content:center; margin-bottom:14px; font-size:18px; transition:background .2s; }
+.func-card.active .fn-icon { background:rgba(37,99,235,.12); }
+.func-card h3 { font-size:14px; margin-bottom:6px; }
+.func-card p { font-size:12px; color:var(--sub); display:none; margin-top:8px; line-height:1.6; }
+.func-card.active p { display:block; }
+
+/* ── VALUE ── */
+#value { background:var(--blue); color:#fff; text-align:center; padding:90px 28px; position:relative; overflow:hidden; }
+#value::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 60% 50%,rgba(255,255,255,.1) 0%,transparent 60%); }
+#value .section-tag { background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.2); }
+#value h2 { color:#fff; margin:16px 0 20px; }
+.value-pct { color:#bfdbfe; }
+#value p { color:rgba(255,255,255,.72); max-width:500px; margin:0 auto 40px; font-size:17px; }
+.btn-white {
+  background:#fff; color:var(--blue); font-weight:700;
+  padding:16px 36px; font-size:16px; border-radius:10px;
+  text-decoration:none; display:inline-block;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
+  position:relative; overflow:hidden; cursor:pointer;
+  transition:transform .22s cubic-bezier(.2,.8,.3,1), box-shadow .22s, background .2s;
+  animation:whitePulse 3.5s ease-in-out infinite;
+}
+@keyframes whitePulse {
+  0%,100%{ box-shadow:0 4px 20px rgba(0,0,0,.2); }
+  50%    { box-shadow:0 6px 30px rgba(0,0,0,.32), 0 0 0 5px rgba(255,255,255,.18); }
+}
+.btn-white::after {
+  content:''; position:absolute; top:0; left:-120%;
+  width:70%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(37,99,235,.12),transparent);
+  transform:skewX(-20deg); pointer-events:none;
+  transition:left .55s cubic-bezier(.2,.8,.4,1);
+}
+.btn-white:hover::after { left:140%; }
+.btn-white:hover {
+  transform:translateY(-4px) scale(1.04);
+  box-shadow:0 14px 40px rgba(0,0,0,.35);
+  background:#f0f6ff; animation:none;
+}
+.btn-white:active { transform:translateY(0) scale(.97); box-shadow:0 4px 12px rgba(0,0,0,.2); animation:none; }
+.btn-white .ripple { background:rgba(37,99,235,.18); }
+.value-note { margin-top:20px; font-size:13px; color:rgba(255,255,255,.45); }
+
+/* ── TESTIMONIALS ── */
+#testimonials { background:var(--bg2); }
+.testi-header { text-align:center; max-width:540px; margin:0 auto 56px; }
+.testi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.testi-card { background:#fff; border-radius:var(--r); padding:28px; box-shadow:var(--sh); transition:all .25s; }
+.testi-card:hover { box-shadow:var(--sh-md); transform:translateY(-3px); }
+.stars { color:#f59e0b; font-size:13px; margin-bottom:14px; }
+.testi-card blockquote { font-size:14px; color:var(--sub); line-height:1.75; margin-bottom:20px; font-style:italic; }
+.testi-author { display:flex; align-items:center; gap:12px; }
+.tav { width:42px; height:42px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; color:#fff; }
+.t-name { font-size:14px; font-weight:600; }
+.t-role { font-size:12px; color:var(--sub); }
+
+/* ── CTA BOTTOM ── */
+#cta { padding:100px 28px; background:#fff; }
+.cta-box {
+  max-width:880px; margin:0 auto;
+  background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);
+  border-radius:24px; padding:72px 56px; text-align:center;
+  position:relative; overflow:hidden;
+  box-shadow:0 24px 80px rgba(15,23,42,.35);
+}
+.cta-box::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 50% 0%,rgba(96,165,250,.2) 0%,transparent 60%); }
+.cta-box h2 { color:#fff; position:relative; }
+.cta-box p { color:rgba(255,255,255,.6); margin:16px auto 40px; max-width:460px; position:relative; }
+
+/* ── FOOTER ── */
+footer { background:#0b0f1a; color:#64748b; padding:72px 28px 36px; }
+.footer-inner { max-width:1200px; margin:0 auto; }
+.footer-top { display:grid; grid-template-columns:2.2fr 1fr 1fr 1fr; gap:56px; padding-bottom:56px; border-bottom:1px solid rgba(255,255,255,.06); margin-bottom:36px; }
+.footer-logo { font-size:22px; font-weight:900; color:#fff; margin-bottom:12px; letter-spacing:-.5px; }
+.footer-logo span { color:#3b82f6; }
+.footer-desc { font-size:13px; line-height:1.75; margin-bottom:24px; }
+.footer-social { display:flex; gap:12px; }
+.footer-social a { color:#475569; display:flex; transition:color .15s; }
+.footer-social a:hover { color:#fff; }
+.footer-col h4 { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#fff; margin-bottom:18px; }
+.footer-col ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.footer-col a { text-decoration:none; color:#64748b; font-size:13px; transition:color .15s; }
+.footer-col a:hover { color:#fff; }
+.footer-bottom { display:flex; justify-content:space-between; align-items:center; font-size:12px; flex-wrap:wrap; gap:12px; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:1024px) {
+  .problems-grid { grid-template-columns:repeat(3,1fr); }
+  .footer-top { grid-template-columns:1fr 1fr; }
+}
+@media(max-width:900px) {
+  .about-inner,.notif-inner { grid-template-columns:1fr; gap:40px; }
+  .features-grid,.functions-grid,.testi-grid { grid-template-columns:1fr 1fr; }
+  .nav-links,.nav-social { display:none; }
+}
+@media(max-width:600px) {
+  .features-grid,.functions-grid,.testi-grid,.problems-grid { grid-template-columns:1fr; }
+  .about-stats { grid-template-columns:1fr 1fr; }
+  .footer-top { grid-template-columns:1fr; }
+  .cta-box { padding:48px 28px; }
+}
+
+/* ════════════════════════════════
+   MODAL
+════════════════════════════════ */
+.modal-backdrop {
+  position:fixed; inset:0; z-index:1000;
+  background:rgba(4,6,18,.7);
+  backdrop-filter:blur(18px) saturate(160%);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+  opacity:0; visibility:hidden;
+  transition:opacity .3s, visibility .3s;
+}
+.modal-backdrop.open { opacity:1; visibility:visible; }
+
+.modal {
+  background:linear-gradient(160deg,#0d1120 0%,#111827 100%);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:24px;
+  width:100%; max-width:420px;
+  padding:44px 40px 40px;
+  position:relative;
+  box-shadow:0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05) inset;
+  transform:scale(.88) translateY(28px);
+  opacity:0;
+  transition:transform .38s cubic-bezier(.2,.85,.3,1), opacity .3s;
+  overflow:hidden;
+}
+.modal-backdrop.open .modal { transform:scale(1) translateY(0); opacity:1; }
+
+/* subtle top gradient glow */
+.modal::before {
+  content:''; position:absolute; top:-80px; left:50%;
+  transform:translateX(-50%);
+  width:280px; height:160px;
+  background:radial-gradient(ellipse,rgba(37,99,235,.35) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+.modal-close {
+  position:absolute; top:18px; right:18px;
+  width:32px; height:32px; border-radius:50%;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08);
+  color:rgba(255,255,255,.5); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .18s; font-size:16px;
+}
+.modal-close:hover { background:rgba(255,255,255,.12); color:#fff; transform:rotate(90deg); }
+
+/* brand */
+.modal-brand {
+  display:flex; align-items:center; gap:10px; margin-bottom:28px;
+}
+.modal-brand-icon {
+  width:42px; height:42px; border-radius:12px;
+  background:linear-gradient(135deg,#2563eb,#4f46e5);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 16px rgba(37,99,235,.5);
+  font-size:20px; flex-shrink:0;
+}
+.modal-brand-name { font-size:18px; font-weight:800; color:#fff; letter-spacing:-.4px; }
+.modal-brand-name span { color:#60a5fa; }
+
+.modal-title { font-size:24px; font-weight:800; color:#fff; letter-spacing:-.6px; margin-bottom:6px; }
+.modal-sub { font-size:13px; color:rgba(255,255,255,.4); margin-bottom:32px; }
+
+/* social buttons */
+.social-btns { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px; }
+.social-btn {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:11px; border-radius:10px; cursor:pointer;
+  background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.75); font-size:13px; font-weight:500;
+  transition:all .2s; font-family:inherit;
+}
+.social-btn:hover { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.22); color:#fff; transform:translateY(-1px); }
+.social-btn:active { transform:translateY(0); }
+
+.divider {
+  display:flex; align-items:center; gap:12px; margin-bottom:24px;
+}
+.divider::before,.divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.08); }
+.divider span { font-size:11px; color:rgba(255,255,255,.3); white-space:nowrap; font-weight:500; }
+
+/* floating label inputs */
+.field {
+  position:relative; margin-bottom:18px;
+}
+.field input {
+  width:100%; padding:18px 16px 8px;
+  background:rgba(255,255,255,.05);
+  border:1.5px solid rgba(255,255,255,.1);
+  border-radius:12px; color:#fff;
+  font-size:15px; font-family:inherit;
+  outline:none; transition:border-color .2s, box-shadow .2s, background .2s;
+  -webkit-autofill-selected: 0;
+}
+.field input:-webkit-autofill {
+  -webkit-box-shadow:0 0 0 40px #111827 inset;
+  -webkit-text-fill-color:#fff;
+}
+.field label {
+  position:absolute; left:16px; top:50%;
+  transform:translateY(-50%);
+  font-size:14px; color:rgba(255,255,255,.38);
+  pointer-events:none; font-weight:500;
+  transition:all .22s cubic-bezier(.2,.8,.3,1);
+}
+.field input:focus { border-color:#3b82f6; background:rgba(59,130,246,.06); box-shadow:0 0 0 4px rgba(37,99,235,.15); }
+.field input:focus + label,
+.field input:not(:placeholder-shown) + label {
+  top:10px; transform:translateY(0);
+  font-size:10px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase;
+  color:#60a5fa;
+}
+/* password toggle */
+.field-pass { position:relative; }
+.pass-toggle {
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:rgba(255,255,255,.35);
+  cursor:pointer; padding:4px; display:flex; transition:color .18s;
+}
+.pass-toggle:hover { color:rgba(255,255,255,.7); }
+
+/* row */
+.field-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.checkbox-wrap { display:flex; align-items:center; gap:8px; cursor:pointer; }
+.checkbox-wrap input[type=checkbox] { display:none; }
+.custom-check {
+  width:18px; height:18px; border-radius:5px;
+  border:1.5px solid rgba(255,255,255,.2); background:rgba(255,255,255,.05);
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s; flex-shrink:0;
+}
+.checkbox-wrap input:checked ~ .custom-check { background:#2563eb; border-color:#2563eb; }
+.custom-check svg { opacity:0; transition:opacity .15s; }
+.checkbox-wrap input:checked ~ .custom-check svg { opacity:1; }
+.checkbox-wrap span { font-size:13px; color:rgba(255,255,255,.45); }
+.forgot { font-size:13px; color:#60a5fa; text-decoration:none; transition:color .15s; }
+.forgot:hover { color:#93c5fd; }
+
+/* submit */
+.btn-signin {
+  width:100%; padding:15px; border-radius:12px;
+  background:linear-gradient(135deg,#3b6ef0,#2563eb,#1b50d8);
+  background-size:200% 200%; background-position:0% 50%;
+  color:#fff; font-size:15px; font-weight:700; font-family:inherit;
+  border:none; cursor:pointer; position:relative; overflow:hidden;
+  transition:transform .22s cubic-bezier(.2,.8,.3,1), box-shadow .22s, background-position .4s;
+  box-shadow:0 4px 20px rgba(37,99,235,.5);
+  margin-bottom:20px;
+}
+.btn-signin::after {
+  content:''; position:absolute; top:0; left:-120%;
+  width:70%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  transform:skewX(-20deg); pointer-events:none;
+  transition:left .55s cubic-bezier(.2,.8,.4,1);
+}
+.btn-signin:hover::after { left:140%; }
+.btn-signin:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(37,99,235,.65); background-position:100% 50%; }
+.btn-signin:active { transform:translateY(0) scale(.98); }
+.btn-signin .ripple { background:rgba(255,255,255,.25); }
+
+/* spinner inside button */
+.btn-signin-inner { display:flex; align-items:center; justify-content:center; gap:10px; }
+.btn-spinner { width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; animation:spin .7s linear infinite; display:none; }
+.btn-signin.loading .btn-spinner { display:block; }
+.btn-signin.loading .btn-label { opacity:.6; }
+
+.modal-footer { text-align:center; font-size:13px; color:rgba(255,255,255,.35); }
+.modal-footer a { color:#60a5fa; text-decoration:none; font-weight:600; transition:color .15s; }
+.modal-footer a:hover { color:#93c5fd; }
+
+/* success state */
+.modal-success {
+  position:absolute; inset:0; border-radius:24px;
+  background:linear-gradient(160deg,#0d1120,#111827);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .35s;
+  text-align:center; padding:40px;
+}
+.modal-success.show { opacity:1; pointer-events:auto; }
+.success-ring {
+  width:72px; height:72px; border-radius:50%;
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:20px; font-size:32px;
+  box-shadow:0 0 0 0 rgba(34,197,94,.4);
+  animation:successPing 1s ease-out forwards;
+}
+@keyframes successPing {
+  0%  { transform:scale(.6); box-shadow:0 0 0 0 rgba(34,197,94,.5); }
+  70% { transform:scale(1);  box-shadow:0 0 0 20px rgba(34,197,94,0); }
+  100%{ transform:scale(1);  box-shadow:0 0 0 0 rgba(34,197,94,0); }
+}
+.success-title { font-size:22px; font-weight:800; color:#fff; margin-bottom:8px; }
+.success-sub { font-size:14px; color:rgba(255,255,255,.45); }
+
+/* shake on error */
+@keyframes shake {
+  0%,100%{ transform:scale(1) translateY(0) translateX(0); }
+  20%    { transform:scale(1) translateY(0) translateX(-8px); }
+  40%    { transform:scale(1) translateY(0) translateX(8px); }
+  60%    { transform:scale(1) translateY(0) translateX(-5px); }
+  80%    { transform:scale(1) translateY(0) translateX(5px); }
+}
+.modal.shake { animation:shake .4s ease; }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader"><div class="loader-ring"></div></div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Sign in">
+
+    <button class="modal-close" onclick="closeModal()" aria-label="Close">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 1l10 10M11 1L1 11"/></svg>
+    </button>
+
+    <div class="modal-brand">
+      <div class="modal-brand-icon">🖨️</div>
+      <div class="modal-brand-name">Print<span>Watch</span></div>
+    </div>
+
+    <div class="modal-title">Welcome back</div>
+    <div class="modal-sub">Sign in to your PrintWatch account</div>
+
+    <!-- Social -->
+    <div class="social-btns">
+      <button class="social-btn" onclick="socialLogin(this,'Google')">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#EA4335" d="M5.27 9.77A7.1 7.1 0 0 1 12 4.9c1.69 0 3.22.6 4.41 1.57l3.3-3.3A11.9 11.9 0 0 0 12 .9C8.07.9 4.67 3.01 2.73 6.17z"/><path fill="#34A853" d="M16.04 18.74A7.1 7.1 0 0 1 12 20.1a7.09 7.09 0 0 1-6.73-4.82L1.5 18.42A11.94 11.94 0 0 0 12 23.1c2.97 0 5.7-1.09 7.77-2.87z"/><path fill="#FBBC05" d="M5.27 14.28A7.12 7.12 0 0 1 4.9 12c0-.8.14-1.57.37-2.29L1.5 6.55A11.84 11.84 0 0 0 .1 12c0 1.93.46 3.76 1.27 5.38z"/><path fill="#4285F4" d="M23.1 12c0-.72-.07-1.41-.2-2.09H12v3.96h6.2a5.3 5.3 0 0 1-2.3 3.48l3.74 2.9C21.87 18.18 23.1 15.28 23.1 12z"/></svg>
+        Google
+      </button>
+      <button class="social-btn" onclick="socialLogin(this,'GitHub')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3C5.4.3 0 5.7 0 12.3c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2 0-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17 4.7 18 5 18 5c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12.02 12.02 0 0 0 24 12.3C24 5.7 18.6.3 12 .3z"/></svg>
+        GitHub
+      </button>
+    </div>
+
+    <div class="divider"><span>or continue with email</span></div>
+
+    <form id="login-form" onsubmit="handleLogin(event)" novalidate>
+      <!-- Email -->
+      <div class="field">
+        <input type="email" id="email" name="email" placeholder=" " autocomplete="email" required>
+        <label for="email">Email address</label>
+      </div>
+
+      <!-- Password -->
+      <div class="field field-pass">
+        <input type="password" id="password" name="password" placeholder=" " autocomplete="current-password" required style="padding-right:48px">
+        <label for="password">Password</label>
+        <button type="button" class="pass-toggle" id="pass-toggle" onclick="togglePass()" aria-label="Show password">
+          <svg id="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="12" cy="12" rx="9" ry="5.5"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>
+          <svg id="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="display:none"><path d="M3 3l18 18M10.5 10.7A2.5 2.5 0 0 0 13.3 13.5M6.5 6.6C4.6 7.9 3 9.8 3 12c0 0 3 6 9 6a9 9 0 0 0 4.4-1.1M9 4.5A9 9 0 0 1 12 4c6 0 9 6 9 6a13 13 0 0 1-1.8 2.6"/></svg>
+        </button>
+      </div>
+
+      <!-- Remember + Forgot -->
+      <div class="field-row">
+        <label class="checkbox-wrap">
+          <input type="checkbox" id="remember">
+          <div class="custom-check">
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span>Remember me</span>
+        </label>
+        <a href="#" class="forgot">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-signin" id="btn-signin">
+        <div class="btn-signin-inner">
+          <div class="btn-spinner"></div>
+          <span class="btn-label">Sign in</span>
+        </div>
+      </button>
+    </form>
+
+    <div class="modal-footer" id="mode-link">
+      Don't have an account? <a href="#" onclick="toggleMode();return false">Create one free</a>
+    </div>
+
+    <!-- Success overlay -->
+    <div class="modal-success" id="modal-success">
+      <div class="success-ring">✓</div>
+      <div class="success-title">Welcome back!</div>
+      <div class="success-sub">Redirecting to your dashboard…</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">Print<span>Watch</span></a>
+    <ul class="nav-links">
+      <li><a href="#features">Solutions</a></li>
+      <li><a href="#functions">Functions</a></li>
+      <li><a href="#value">Pricing</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#testimonials">Customers</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-social">
+        <a href="#" aria-label="LinkedIn"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
+        <a href="#" aria-label="X"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        <a href="#" aria-label="Facebook"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+      </div>
+      <button onclick="openModal()" class="btn btn-outline" style="font-size:13px;padding:9px 18px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Sign in
+      </button>
+      <a href="#cta" class="btn btn-primary">Try for free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-gradient"></div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <div class="section-tag">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="#22c55e"/><circle cx="5" cy="5" r="2.5" fill="#fff"/></svg>
+        Printer Fleet Management
+      </div>
+      <h1>The <em>Future</em> of<br>Printer Monitoring</h1>
+      <p>Control your entire fleet in real time. Cut costs, eliminate manual rounds, and prevent issues before they happen — all from one intelligent dashboard.</p>
+      <div class="hero-ctas">
+        <a href="#cta" class="btn btn-primary btn-hero">Start free 14-day trial</a>
+        <a href="#features" class="btn btn-hero-outline btn-hero">See how it works</a>
+      </div>
+    </div>
+  </div>
+  <!-- Floating glassmorphism badge -->
+  <div class="hero-badge">
+    <div class="panel-header" style="color:rgba(255,255,255,.35)">Live overview</div>
+    <div class="badge-row" style="margin-top:12px">
+      <div class="badge-icon" style="background:rgba(34,197,94,.15)">🖨️</div>
+      <div><div class="badge-label">Active devices</div><div class="badge-val">142 online</div></div>
+    </div>
+    <div class="badge-row">
+      <div class="badge-icon" style="background:rgba(245,158,11,.15)">⚠️</div>
+      <div><div class="badge-label">Toner alerts</div><div class="badge-val">3 low</div></div>
+    </div>
+    <div class="badge-divider"></div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:8px">Weekly print volume</div>
+    <div class="mini-bars">
+      <div class="mini-bar" style="height:40%;background:rgba(59,130,246,.3)"></div>
+      <div class="mini-bar" style="height:65%;background:rgba(59,130,246,.4)"></div>
+      <div class="mini-bar" style="height:48%;background:rgba(59,130,246,.3)"></div>
+      <div class="mini-bar" style="height:82%;background:rgba(59,130,246,.6)"></div>
+      <div class="mini-bar" style="height:61%;background:rgba(59,130,246,.4)"></div>
+      <div class="mini-bar" style="height:93%;background:#3b82f6"></div>
+      <div class="mini-bar" style="height:70%;background:rgba(59,130,246,.5)"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<div id="trust">
+  <div class="trust-inner">
+    <span class="trust-label">Trusted by</span>
+    <div class="trust-logos">
+      <span class="trust-logo">Accenture</span>
+      <span class="trust-logo">Siemens</span>
+      <span class="trust-logo">Deloitte</span>
+      <span class="trust-logo">Santander</span>
+      <span class="trust-logo">Allianz</span>
+      <span class="trust-logo">Vodafone</span>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="container">
+    <div class="about-inner">
+      <div>
+        <div class="section-tag section-tag-dark">About PrintWatch</div>
+        <h2 style="margin-top:8px">A modern solution for managing printers in real time</h2>
+        <p class="lead" style="margin-top:20px">Built by IT professionals who were tired of spreadsheets and manual rounds. PrintWatch gives you full visibility over every device — from toner levels to jam history, anywhere.</p>
+        <div class="about-stats">
+          <div class="stat"><div class="stat-num" data-target="500" data-suffix="+">0</div><div class="stat-label">Companies worldwide</div></div>
+          <div class="stat"><div class="stat-num" data-target="80" data-suffix="k+">0</div><div class="stat-label">Printers monitored</div></div>
+          <div class="stat"><div class="stat-num" data-target="40" data-suffix="%">0</div><div class="stat-label">Avg cost reduction</div></div>
+          <div class="stat"><div class="stat-num" data-target="99" data-suffix=".9%">0</div><div class="stat-label">Platform uptime</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="ceo-card">
+          <div class="ceo-av">A</div>
+          <div class="ceo-info">
+            <strong>Anna Kowalski</strong>
+            <span>CEO & Co-founder, PrintWatch</span>
+          </div>
+        </div>
+        <p class="sub" style="margin-bottom:20px">"We started PrintWatch because we saw IT managers drowning in reactive maintenance. Our mission is to make printer management completely invisible — it just works, so your team can focus on what actually matters."</p>
+        <p class="sub">We have been on the market since 2016, constantly expanding our capabilities based on real customer feedback from enterprises managing hundreds to thousands of devices.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEMS -->
+<section id="problems">
+  <div class="container">
+    <div class="section-tag section-tag-dark">Why PrintWatch</div>
+    <h2 style="max-width:500px;margin-top:8px">Five problems we solve — on day one</h2>
+    <div class="problems-grid">
+      <div class="problem-card">
+        <div class="p-icon" style="background:#fef3c7">📋</div>
+        <h3>Manual readings</h3>
+        <p>Eliminate time-consuming manual rounds to check toner and meter counts across your entire fleet.</p>
+      </div>
+      <div class="problem-card">
+        <div class="p-icon" style="background:#fee2e2">👁️</div>
+        <h3>Lack of visibility</h3>
+        <p>Get a real-time overview of every device, anywhere — no more blind spots in your infrastructure.</p>
+      </div>
+      <div class="problem-card">
+        <div class="p-icon" style="background:#ede9fe">📡</div>
+        <h3>Fleet monitoring</h3>
+        <p>Monitor hundreds of devices simultaneously with automated alerts and live status tracking.</p>
+      </div>
+      <div class="problem-card">
+        <div class="p-icon" style="background:#dcfce7">🚚</div>
+        <h3>Logistics costs</h3>
+        <p>Optimise supply orders with demand forecasting that prevents expensive emergency restocking.</p>
+      </div>
+      <div class="problem-card">
+        <div class="p-icon" style="background:#dbeafe">📊</div>
+        <h3>SLA reporting</h3>
+        <p>Generate accurate SLA and KPI reports automatically with all the data you need in seconds.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="features-header">
+      <div class="section-tag section-tag-dark">Core Capabilities</div>
+      <h2 style="margin-top:8px">Everything you need to manage your fleet</h2>
+      <p class="sub" style="margin-top:16px">Six powerful monitoring capabilities, all in one intelligent dashboard.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="f-num">01</div>
+        <div class="f-icon">🖨️</div>
+        <h3>Toner level tracking</h3>
+        <p>Monitor consumable levels across all devices in real time. Predictive alerts before printers run empty.</p>
+      </div>
+      <div class="feature-card">
+        <div class="f-num">02</div>
+        <div class="f-icon">⚠️</div>
+        <h3>Jam & error detection</h3>
+        <p>Detect paper jams, hardware errors, and maintenance requirements automatically and instantly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="f-num">03</div>
+        <div class="f-icon">📶</div>
+        <h3>Connectivity status</h3>
+        <p>Know the moment a device goes offline. Get notified immediately so downtime stays minimal.</p>
+      </div>
+      <div class="feature-card">
+        <div class="f-num">04</div>
+        <div class="f-icon">📈</div>
+        <h3>Consumption analytics</h3>
+        <p>Track print volumes and consumable trends across departments, locations, and individual devices.</p>
+      </div>
+      <div class="feature-card">
+        <div class="f-num">05</div>
+        <div class="f-icon">💰</div>
+        <h3>Cost management</h3>
+        <p>Visualise real printing costs per device, department, or site. Identify waste and reduce spend.</p>
+      </div>
+      <div class="feature-card">
+        <div class="f-num">06</div>
+        <div class="f-icon">👤</div>
+        <h3>Device assignments</h3>
+        <p>Assign printers to users, teams, or locations. Full accountability across your organisation.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NOTIFICATIONS -->
+<section id="notifications">
+  <div class="blobs">
+    <div class="blob" style="width:500px;height:500px;background:#1e3a8a;top:-100px;left:-150px;animation-delay:0s"></div>
+    <div class="blob" style="width:400px;height:400px;background:#312e81;bottom:-80px;right:-80px;animation-delay:4s;animation-direction:alternate-reverse"></div>
+  </div>
+  <div class="container">
+    <div class="notif-inner">
+      <div>
+        <div class="section-tag">Real-time Alerts</div>
+        <h2 style="color:#fff;margin-top:8px">Don't miss any notification. Respond in real time.</h2>
+        <p class="lead" style="color:#94a3b8;margin-top:16px">PrintWatch sends instant alerts via email, SMS, or webhook — so your team is always one step ahead of every issue.</p>
+        <div class="notif-list">
+          <div class="notif-item"><div class="ndot" style="background:#f59e0b;box-shadow:0 0 8px #f59e0b"></div><div><strong>Toner low warning</strong><span>Triggered when any cartridge drops below your defined threshold.</span></div></div>
+          <div class="notif-item"><div class="ndot" style="background:#ef4444;box-shadow:0 0 8px #ef4444"></div><div><strong>Device offline alert</strong><span>Notified the moment a printer loses its network connection.</span></div></div>
+          <div class="notif-item"><div class="ndot" style="background:#3b82f6;box-shadow:0 0 8px #3b82f6"></div><div><strong>Maintenance reminder</strong><span>Scheduled alerts based on page count or time intervals you configure.</span></div></div>
+          <div class="notif-item"><div class="ndot" style="background:#22c55e;box-shadow:0 0 8px #22c55e"></div><div><strong>Overconsumption flag</strong><span>Automatic flag when usage exceeds the normal baseline for a device.</span></div></div>
+        </div>
+      </div>
+      <div class="alert-panel">
+        <div class="panel-header">Live alerts</div>
+        <div class="alert-card" style="border-color:#f59e0b"><span class="alert-emoji">🟡</span><div class="alert-body"><strong>HP LaserJet M404 — Floor 3</strong><span>Toner at 8% — order recommended</span></div><div class="alert-time">2m ago</div></div>
+        <div class="alert-card" style="border-color:#ef4444"><span class="alert-emoji">🔴</span><div class="alert-body"><strong>Canon iR2625 — Reception</strong><span>Device offline since 09:14</span></div><div class="alert-time">18m ago</div></div>
+        <div class="alert-card" style="border-color:#3b82f6"><span class="alert-emoji">🔵</span><div class="alert-body"><strong>Xerox VersaLink — Server Room</strong><span>Scheduled maintenance in 3 days</span></div><div class="alert-time">1h ago</div></div>
+        <div class="alert-card" style="border-color:#22c55e"><span class="alert-emoji">🟢</span><div class="alert-body"><strong>HP LaserJet M404 — Floor 3</strong><span>Back online — issue resolved</span></div><div class="alert-time">2h ago</div></div>
+        <div class="alert-card" style="border-color:#8b5cf6"><span class="alert-emoji">🟣</span><div class="alert-body"><strong>Epson WF-3820 — HR Dept</strong><span>Overconsumption detected: 340% above baseline</span></div><div class="alert-time">4h ago</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FUNCTIONS -->
+<section id="functions">
+  <div class="container">
+    <div class="functions-header">
+      <div class="section-tag section-tag-dark">Detailed Functions</div>
+      <h2 style="margin-top:8px">Nine powerful tools in one platform</h2>
+      <p class="sub" style="margin-top:14px">Click any card to learn more about each capability.</p>
+    </div>
+    <div class="functions-grid">
+      <div class="func-card active" onclick="setFunc(this)"><div class="fn-icon">📦</div><h3>Consumables monitoring</h3><p>Track toner, drums, and all consumables across your fleet with live percentage readings and history charts.</p></div>
+      <div class="func-card" onclick="setFunc(this)"><div class="fn-icon">🔮</div><h3>Demand forecasting</h3><p>AI-powered predictions of when supplies will run out, so you order proactively — never reactively again.</p></div>
+      <div class="func-card" onclick="setFunc(this)"><div class="fn-icon">🔔</div><h3>Smart notifications</h3><p>Fully configurable alerts by device, location, or threshold — delivered by email, SMS, or webhook.</p></div>
+      <div class="func-card" onclick="setFunc(this)"><div class="fn-icon">🛒</div><h3>Automated ordering</h3><p>Connect to your preferred supplier and trigger purchase orders automatically when stock runs low.</p></div>
+      <div class="func-card" onclick="setFunc(this)"><div class="fn-icon">🗂️</div><h3>Cart management</h3><p>Review, approve, and manage all supply orders from within the platform before they are dispatched.</p></div>
+      <div class="func-card" onclick="setFunc(this)"><div class="fn-icon">✅</div><h3>Compatibility checks</h3><p>Verify that ordered cartridges are compatible with target devices automatically before purchase is confirmed.</p></div>
+      <div class="func-card" onclick="setFunc(this)"><div class="fn-icon">📉</div><h3>Overconsumption alerts</h3><p>Flag devices or users consuming far above normal baselines instantly to prevent waste and reduce costs.</p></div>
+      <div class="func-card" onclick="setFunc(this)"><div class="fn-icon">🔍</div><h3>Serial number tracking</h3><p>Full lifecycle history for every cartridge — from receipt to replacement — for complete auditability.</p></div>
+      <div class="func-card" onclick="setFunc(this)"><div class="fn-icon">🔌</div><h3>Free API access</h3><p>Integrate PrintWatch into your ERP, CRM, or ITSM system with our open, well-documented REST API.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- VALUE -->
+<section id="value">
+  <div class="container" style="position:relative;z-index:1">
+    <div class="section-tag">Results that matter</div>
+    <h2><span class="value-pct">40%</span> reduction in<br>printing-related expenses</h2>
+    <p>Join hundreds of companies that have already cut costs, eliminated waste, and regained control of their printer fleet.</p>
+    <a href="#cta" class="btn-white">Start your free 14-day trial</a>
+    <p class="value-note">No credit card required · Setup in under 10 minutes · Cancel anytime</p>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div class="container">
+    <div class="testi-header">
+      <div class="section-tag section-tag-dark">Customer Stories</div>
+      <h2 style="margin-top:8px">Trusted by IT teams managing thousands of devices</h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card"><div class="stars">★★★★★</div><blockquote>"PrintWatch transformed our 600-device fleet. We went from reactive firefighting to full control. Toner orders now happen automatically before anyone notices."</blockquote><div class="testi-author"><div class="tav" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6)">M</div><div><div class="t-name">Marek D.</div><div class="t-role">IT Manager · 600 printers</div></div></div></div>
+      <div class="testi-card"><div class="stars">★★★★★</div><blockquote>"We reduced consumables spend by 35% in our first quarter. The forecasting feature alone paid for the subscription within two months of use."</blockquote><div class="testi-author"><div class="tav" style="background:linear-gradient(135deg,#10b981,#3b82f6)">S</div><div><div class="t-name">Sarah K.</div><div class="t-role">Operations Director · 1,200 printers</div></div></div></div>
+      <div class="testi-card"><div class="stars">★★★★★</div><blockquote>"The API integration with our ERP was seamless. Purchase orders for consumables are now created automatically — zero manual work for procurement."</blockquote><div class="testi-author"><div class="tav" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">R</div><div><div class="t-name">Robert T.</div><div class="t-role">CTO · 380 printers</div></div></div></div>
+      <div class="testi-card"><div class="stars">★★★★★</div><blockquote>"Real-time alerts mean we handle issues before users even notice them. Helpdesk tickets related to printers dropped by 60% in just three months."</blockquote><div class="testi-author"><div class="tav" style="background:linear-gradient(135deg,#8b5cf6,#ec4899)">L</div><div><div class="t-name">Laura M.</div><div class="t-role">IT Lead · 800 printers</div></div></div></div>
+      <div class="testi-card"><div class="stars">★★★★★</div><blockquote>"We've used PrintWatch since 2019. It keeps improving, support is excellent, and it genuinely saves us hundreds of hours every year without fail."</blockquote><div class="testi-author"><div class="tav" style="background:linear-gradient(135deg,#06b6d4,#3b82f6)">J</div><div><div class="t-name">Jan W.</div><div class="t-role">Infrastructure Lead · 1,500 printers</div></div></div></div>
+      <div class="testi-card"><div class="stars">★★★★★</div><blockquote>"Setup took less than a day. Within a week we had a complete picture of our fleet that we simply never had before. The visibility is incredible."</blockquote><div class="testi-author"><div class="tav" style="background:linear-gradient(135deg,#22c55e,#06b6d4)">C</div><div><div class="t-name">Clara B.</div><div class="t-role">IT Director · 300 printers</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-box">
+      <div class="section-tag" style="background:rgba(96,165,250,.15);color:#93c5fd;border-color:rgba(96,165,250,.2)">Get started today</div>
+      <h2 style="margin-top:16px">Ready to take control of your printer fleet?</h2>
+      <p>Start your free 14-day trial. No credit card required. Full access from day one.</p>
+      <a href="#" class="btn-white">Start for free — 14 days</a>
+      <div style="margin-top:16px;font-size:13px;color:rgba(255,255,255,.35)">Already trusted by 500+ companies across Europe</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">Print<span>Watch</span></div>
+        <p class="footer-desc">The modern platform for printer fleet management. Real-time monitoring, automated ordering, and intelligent alerts — all in one place.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg></a>
+          <a href="#" aria-label="X"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        </div>
+      </div>
+      <div class="footer-col"><h4>Product</h4><ul><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">API Docs</a></li><li><a href="#">Changelog</a></li><li><a href="#">Status</a></li></ul></div>
+      <div class="footer-col"><h4>Company</h4><ul><li><a href="#">About us</a></li><li><a href="#">Blog</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li><li><a href="#">Contact</a></li></ul></div>
+      <div class="footer-col"><h4>Support</h4><ul><li><a href="#">Help centre</a></li><li><a href="#">Community</a></li><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Service</a></li><li><a href="mailto:support@printwatch.io">support@printwatch.io</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 PrintWatch. All rights reserved.</span>
+      <span>Made with ❤️ for IT teams everywhere</span>
+    </div>
+  </div>
+</footer>
+
+<!-- THREE.JS -->
+<!-- Supabase Auth (gratis, sin servidor) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ─────────────────────────────────────────────────
+// SUPABASE CONFIG
+// 1. Crea cuenta gratis en https://supabase.com
+// 2. New project → Settings → API
+// 3. Pega aquí tu URL y anon key
+// ─────────────────────────────────────────────────
+const SUPABASE_URL  = 'PEGA_AQUI_TU_URL';       // ej: https://xxxx.supabase.co
+const SUPABASE_KEY  = 'PEGA_AQUI_TU_ANON_KEY';  // empieza por eyJ...
+
+const _supabase = (SUPABASE_URL.startsWith('http'))
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null; // modo demo si no hay keys
+
+if (_supabase) {
+  _supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN') showSuccess();
+    if (event === 'SIGNED_OUT') console.log('Logged out');
+  });
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  const hero   = document.getElementById('hero');
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x06060e, 0.055);
+
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(5, 3.5, 7);
+  camera.lookAt(0, 0.3, 0);
+
+  /* ── MATERIALS ── */
+  const bodyMat = new THREE.MeshPhysicalMaterial({ color:0x1a1d2e, roughness:.35, metalness:.75, clearcoat:.5, clearcoatRoughness:.2 });
+  const lidMat  = new THREE.MeshPhysicalMaterial({ color:0x22253a, roughness:.28, metalness:.65, clearcoat:.6 });
+  const darkMat = new THREE.MeshStandardMaterial({ color:0x080810, roughness:.8 });
+  const dispMat = new THREE.MeshStandardMaterial({ color:0x2563eb, emissive:0x1a40cc, emissiveIntensity:2, roughness:.05 });
+  const ledGreenMat = new THREE.MeshStandardMaterial({ color:0x22c55e, emissive:0x16a34a, emissiveIntensity:4 });
+  const ledYellowMat= new THREE.MeshStandardMaterial({ color:0xf59e0b, emissive:0xd97706, emissiveIntensity:4 });
+
+  /* ── BUILD PRINTER ── */
+  function createPrinter() {
+    const g = new THREE.Group();
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.0, 2.6), bodyMat);
+    body.castShadow = true; body.receiveShadow = true;
+    g.add(body);
+
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(3.2, .14, 2.6), lidMat);
+    lid.position.y = 1.07; g.add(lid);
+
+    const glassBed = new THREE.Mesh(new THREE.BoxGeometry(2.7, .05, 2.2),
+      new THREE.MeshPhysicalMaterial({ color:0x0a0a20, roughness:.02, metalness:.05, transmission:.3, transparent:true }));
+    glassBed.position.y = 1.15; g.add(glassBed);
+
+    const front = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.0, .04),
+      new THREE.MeshPhysicalMaterial({ color:0x151828, roughness:.25, metalness:.55, clearcoat:.4 }));
+    front.position.z = 1.32; g.add(front);
+
+    // Display
+    const disp = new THREE.Mesh(new THREE.BoxGeometry(1.0, .55, .04), dispMat);
+    disp.position.set(.6, .2, 1.34); g.add(disp);
+    const dispGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.3, .8),
+      new THREE.MeshBasicMaterial({ color:0x2563eb, transparent:true, opacity:.08, side:THREE.FrontSide }));
+    dispGlow.position.set(.6, .2, 1.36); g.add(dispGlow);
+
+    // LEDs
+    const ledG = new THREE.Mesh(new THREE.SphereGeometry(.07,12,12), ledGreenMat);
+    ledG.position.set(-1.35, .5, 1.34); g.add(ledG);
+    const ledY = new THREE.Mesh(new THREE.SphereGeometry(.07,12,12), ledYellowMat);
+    ledY.position.set(-1.35, .3, 1.34); g.add(ledY);
+
+    // Output slot
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(2.4, .06, .04), darkMat);
+    slot.position.set(0, .58, 1.34); g.add(slot);
+
+    // Output tray (tilted)
+    const tray = new THREE.Mesh(new THREE.BoxGeometry(2.2, .06, 1.0), lidMat);
+    tray.position.set(0, 1.1, .72); tray.rotation.x = -.15; g.add(tray);
+
+    // Paper input tray
+    const paperIn = new THREE.Mesh(new THREE.BoxGeometry(2.6, .2, 2.6),
+      new THREE.MeshPhysicalMaterial({ color:0x12141f, roughness:.6, metalness:.4 }));
+    paperIn.position.y = -1.1; g.add(paperIn);
+
+    // Side vents left
+    for(let i=0;i<6;i++){
+      const v=new THREE.Mesh(new THREE.BoxGeometry(.03,.09,1.6),darkMat);
+      v.position.set(-1.62,-.25+i*.12,0); g.add(v);
+    }
+    // Side vents right
+    for(let i=0;i<6;i++){
+      const v=new THREE.Mesh(new THREE.BoxGeometry(.03,.09,1.6),darkMat);
+      v.position.set(1.62,-.25+i*.12,0); g.add(v);
+    }
+
+    // Rubber feet
+    const footMat=new THREE.MeshStandardMaterial({color:0x050508,roughness:.95});
+    [[-1.1,-1.1],[1.1,-1.1],[-1.1,1.1],[1.1,1.1]].forEach(([x,z])=>{
+      const f=new THREE.Mesh(new THREE.CylinderGeometry(.13,.15,.08,8),footMat);
+      f.position.set(x,-1.24,z); g.add(f);
+    });
+
+    // Control buttons
+    const btnMat=new THREE.MeshPhysicalMaterial({color:0x2a2d45,roughness:.5,metalness:.3});
+    [-1.1,-.8,-.5].forEach(x=>{
+      const b=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.05,16),btnMat);
+      b.rotation.x=Math.PI/2; b.position.set(x,-.3,1.36); g.add(b);
+    });
+
+    return g;
+  }
+
+  const printer = createPrinter();
+  scene.add(printer);
+
+  /* ── FLOATING INDICATORS ── */
+  function makeIndicator(color, emissive) {
+    const g = new THREE.Group();
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(.18,20,20),
+      new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity:2.5 })
+    );
+    g.add(sphere);
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(.28,.025,8,40),
+      new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity:1.5, transparent:true, opacity:.7 })
+    );
+    g.add(ring);
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(.8,.8),
+      new THREE.MeshBasicMaterial({ color, transparent:true, opacity:.06, depthWrite:false, side:THREE.DoubleSide })
+    );
+    g.add(glow);
+    return g;
+  }
+
+  const orbs = [
+    { mesh: makeIndicator(0x22c55e, 0x16a34a), r:4.2, speed:.55, h:.8, phase:0 },
+    { mesh: makeIndicator(0xf59e0b, 0xd97706), r:5.0, speed:.38, h:-.5, phase:2.1 },
+    { mesh: makeIndicator(0x3b82f6, 0x1d4ed8), r:3.6, speed:.72, h:1.6, phase:4.2 },
+  ];
+  orbs.forEach(o => scene.add(o.mesh));
+
+  /* ── PARTICLE FIELD ── */
+  const N = 400;
+  const pos = new Float32Array(N*3);
+  const col = new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    pos[i*3]   = (Math.random()-.5)*28;
+    pos[i*3+1] = (Math.random()-.5)*20;
+    pos[i*3+2] = (Math.random()-.5)*22 - 6;
+    const t = Math.random();
+    col[i*3]   = .15+t*.25;
+    col[i*3+1] = .3+t*.4;
+    col[i*3+2] = .7+t*.3;
+  }
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  pGeo.setAttribute('color',    new THREE.BufferAttribute(col,3));
+  const particles = new THREE.Points(pGeo,
+    new THREE.PointsMaterial({ size:.07, vertexColors:true, transparent:true, opacity:.8, sizeAttenuation:true }));
+  scene.add(particles);
+
+  /* ── GRID FLOOR ── */
+  const grid = new THREE.GridHelper(30, 30, 0x1e2a5a, 0x0f172a);
+  grid.position.y = -1.5;
+  grid.material.opacity = .35; grid.material.transparent = true;
+  scene.add(grid);
+
+  /* ── LIGHTS ── */
+  scene.add(new THREE.AmbientLight(0xffffff, .25));
+
+  const key = new THREE.DirectionalLight(0xffffff, .7);
+  key.position.set(6,12,8); key.castShadow=true;
+  key.shadow.mapSize.set(1024,1024); key.shadow.camera.near=1; key.shadow.camera.far=30;
+  scene.add(key);
+
+  const fill = new THREE.PointLight(0x3b82f6, 4, 16);
+  fill.position.set(-6,3,5); scene.add(fill);
+
+  const rim = new THREE.PointLight(0x8b5cf6, 2, 14);
+  rim.position.set(5,-2,-5); scene.add(rim);
+
+  const dispLight = new THREE.PointLight(0x2563eb, 3, 4);
+  dispLight.position.set(.6,.2,3); scene.add(dispLight);
+
+  const greenLight = new THREE.PointLight(0x22c55e, 1.5, 3);
+  greenLight.position.set(-1.35,.5,2.5); scene.add(greenLight);
+
+  /* ── RESIZE ── */
+  function resize(){
+    const W=hero.clientWidth, H=hero.clientHeight;
+    renderer.setSize(W,H);
+    camera.aspect=W/H; camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  /* ── MOUSE PARALLAX ── */
+  let mx=0, my=0;
+  document.addEventListener('mousemove', e=>{
+    mx = (e.clientX/window.innerWidth  - .5) * 2;
+    my = (e.clientY/window.innerHeight - .5) * 2;
+  });
+
+  /* ── ANIMATE ── */
+  let t=0;
+  function animate(){
+    requestAnimationFrame(animate);
+    t += .013;
+
+    printer.rotation.y = t * .22;
+    printer.position.y = Math.sin(t*.6) * .15;
+
+    orbs.forEach(o=>{
+      const a = t*o.speed + o.phase;
+      o.mesh.position.x = Math.cos(a)*o.r;
+      o.mesh.position.z = Math.sin(a)*o.r*.55;
+      o.mesh.position.y = o.h + Math.sin(t*1.4+o.phase)*.35;
+      o.mesh.rotation.y = t*2.5;
+    });
+
+    particles.rotation.y = t*.02;
+    particles.position.y = Math.sin(t*.15)*.3;
+
+    // Subtle camera parallax
+    camera.position.x = 5 + mx*.5;
+    camera.position.y = 3.5 - my*.4;
+    camera.lookAt(0, .3, 0);
+
+    // Pulse display light
+    dispLight.intensity = 2.5 + Math.sin(t*2)*.8;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Hide loader when ready
+  document.getElementById('loader').classList.add('hide');
+})();
+</script>
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* Stat counters */
+document.querySelectorAll('.stat-num[data-target]').forEach(el=>{
+  const target  = parseFloat(el.dataset.target);
+  const suffix  = el.dataset.suffix || '';
+  ScrollTrigger.create({ trigger:el, once:true, start:'top 85%', onEnter:()=>{
+    gsap.fromTo({v:0},{v:target},{
+      duration:2, ease:'power2.out',
+      onUpdate(){ el.textContent = Math.round(this.targets()[0].v) + suffix; }
+    });
+  }});
+});
+
+/* Cards stagger */
+gsap.utils.toArray('.feature-card, .problem-card, .testi-card, .func-card').forEach((el,i)=>{
+  gsap.fromTo(el,{opacity:0,y:28},{
+    opacity:1, y:0, duration:.55, delay:(i%3)*.06,
+    scrollTrigger:{ trigger:el, start:'top 88%', once:true }
+  });
+});
+
+/* H2 reveals */
+gsap.utils.toArray('h2').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,y:18},{
+    opacity:1,y:0,duration:.7,
+    scrollTrigger:{ trigger:el, start:'top 85%', once:true }
+  });
+});
+
+/* Section tags */
+gsap.utils.toArray('.section-tag').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,y:10},{
+    opacity:1,y:0,duration:.5,
+    scrollTrigger:{ trigger:el, start:'top 88%', once:true }
+  });
+});
+
+/* Alert cards pulse on scroll into view */
+gsap.utils.toArray('.alert-card').forEach((el,i)=>{
+  gsap.fromTo(el,{opacity:0,x:20},{
+    opacity:1,x:0,duration:.5,delay:i*.1,
+    scrollTrigger:{ trigger:el, start:'top 90%', once:true }
+  });
+});
+
+/* 3D tilt on feature cards */
+document.querySelectorAll('.feature-card').forEach(card=>{
+  card.addEventListener('mousemove',e=>{
+    const r   = card.getBoundingClientRect();
+    const x   = (e.clientX - r.left) / r.width  - .5;
+    const y   = (e.clientY - r.top)  / r.height - .5;
+    card.style.transform = `perspective(600px) rotateY(${x*12}deg) rotateX(${-y*10}deg) translateZ(8px)`;
+  });
+  card.addEventListener('mouseleave',()=>{
+    gsap.to(card,{ rotateX:0, rotateY:0, translateZ:0, duration:.5, ease:'power2.out',
+      clearProps:'transform' });
+  });
+});
+
+/* Notif items stagger */
+gsap.utils.toArray('.notif-item').forEach((el,i)=>{
+  gsap.fromTo(el,{opacity:0,x:-20},{
+    opacity:1,x:0,duration:.5,delay:i*.1,
+    scrollTrigger:{ trigger:el, start:'top 88%', once:true }
+  });
+});
+</script>
+
+<script>
+/* Functions accordion */
+function setFunc(el){
+  document.querySelectorAll('.func-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* Smooth hero scroll CTA */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t){ e.preventDefault(); t.scrollIntoView({behavior:'smooth'}); }
+  });
+});
+</script>
+
+<script>
+/* ── Modal ── */
+function openModal() {
+  document.getElementById('modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('email').focus(), 400);
+}
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleBackdropClick(e) {
+  if (e.target === document.getElementById('modal-backdrop')) closeModal();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function togglePass() {
+  const inp = document.getElementById('password');
+  const open = document.getElementById('eye-open');
+  const closed = document.getElementById('eye-closed');
+  if (inp.type === 'password') {
+    inp.type = 'text'; open.style.display = 'none'; closed.style.display = 'block';
+  } else {
+    inp.type = 'password'; open.style.display = 'block'; closed.style.display = 'none';
+  }
+}
+
+function showSuccess() {
+  const btn = document.getElementById('btn-signin');
+  btn.classList.remove('loading');
+  btn.querySelector('.btn-label').textContent = 'Sign in';
+  document.getElementById('modal-success').classList.add('show');
+  setTimeout(closeModal, 2200);
+  setTimeout(() => document.getElementById('modal-success').classList.remove('show'), 2600);
+}
+
+function showError(msg) {
+  const btn = document.getElementById('btn-signin');
+  btn.classList.remove('loading');
+  btn.querySelector('.btn-label').textContent = 'Sign in';
+  document.getElementById('modal').classList.add('shake');
+  setTimeout(() => document.getElementById('modal').classList.remove('shake'), 450);
+  let err = document.getElementById('login-error');
+  if (!err) {
+    err = document.createElement('p');
+    err.id = 'login-error';
+    err.style.cssText = 'color:#f87171;font-size:13px;text-align:center;margin-bottom:12px;margin-top:-8px';
+    document.getElementById('btn-signin').before(err);
+  }
+  err.textContent = msg;
+  setTimeout(() => err && (err.textContent = ''), 4000);
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn   = document.getElementById('btn-signin');
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('password').value;
+  const isSignUp = btn.dataset.mode === 'signup';
+
+  if (!email || !pass) {
+    document.getElementById('modal').classList.add('shake');
+    setTimeout(() => document.getElementById('modal').classList.remove('shake'), 450);
+    return;
+  }
+
+  btn.classList.add('loading');
+  btn.querySelector('.btn-label').textContent = isSignUp ? 'Creating account…' : 'Signing in…';
+
+  // Sin Supabase configurado → modo demo
+  if (!_supabase) {
+    setTimeout(showSuccess, 1600);
+    return;
+  }
+
+  try {
+    let result;
+    if (isSignUp) {
+      result = await _supabase.auth.signUp({ email, password: pass });
+      if (!result.error) { showSuccess(); return; }
+    } else {
+      result = await _supabase.auth.signInWithPassword({ email, password: pass });
+      if (!result.error) { showSuccess(); return; }
+    }
+    showError(result.error.message || 'Incorrect email or password.');
+  } catch {
+    showError('Connection error. Please try again.');
+  }
+}
+
+async function socialLogin(btn, provider) {
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<div class="loader-ring" style="width:16px;height:16px;border-width:2px"></div> Connecting…';
+  btn.disabled = true;
+
+  if (!_supabase) {
+    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; showSuccess(); }, 1600);
+    return;
+  }
+
+  const providerKey = provider.toLowerCase();
+  const { error } = await _supabase.auth.signInWithOAuth({
+    provider: providerKey,
+    options: { redirectTo: window.location.origin }
+  });
+  if (error) { btn.innerHTML = orig; btn.disabled = false; showError(error.message); }
+}
+
+/* Toggle sign in / sign up */
+function toggleMode() {
+  const btn   = document.getElementById('btn-signin');
+  const title = document.querySelector('.modal-title');
+  const sub   = document.querySelector('.modal-sub');
+  const link  = document.getElementById('mode-link');
+  const isSignUp = btn.dataset.mode === 'signup';
+  if (isSignUp) {
+    btn.dataset.mode = '';
+    btn.querySelector('.btn-label').textContent = 'Sign in';
+    title.textContent = 'Welcome back';
+    sub.textContent   = 'Sign in to your PrintWatch account';
+    link.innerHTML    = 'Don\'t have an account? <a href="#" onclick="toggleMode();return false">Create one free</a>';
+  } else {
+    btn.dataset.mode = 'signup';
+    btn.querySelector('.btn-label').textContent = 'Create account';
+    title.textContent = 'Create your account';
+    sub.textContent   = 'Free forever. No credit card required.';
+    link.innerHTML    = 'Already have an account? <a href="#" onclick="toggleMode();return false">Sign in</a>';
+  }
+}
+
+/* ripple on signin button */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-signin').addEventListener('pointerdown', e => {
+    const btn  = e.currentTarget;
+    const r    = btn.getBoundingClientRect();
+    const size = Math.max(r.width, r.height) * 2;
+    const el   = document.createElement('span');
+    el.className = 'ripple';
+    el.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-r.left-size/2}px;top:${e.clientY-r.top-size/2}px`;
+    btn.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  });
+});
+
+/* ── Inject fill span into outline buttons ── */
+document.querySelectorAll('.btn-outline').forEach(btn => {
+  const span = document.createElement('span');
+  span.className = 'btn-outline-fill';
+  btn.prepend(span);
+});
+
+/* ── Ripple effect on ALL buttons ── */
+document.querySelectorAll('.btn, .btn-white').forEach(btn => {
+  btn.addEventListener('pointerdown', e => {
+    const r   = btn.getBoundingClientRect();
+    const size = Math.max(r.width, r.height) * 2;
+    const el  = document.createElement('span');
+    el.className = 'ripple';
+    el.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-r.left-size/2}px;top:${e.clientY-r.top-size/2}px`;
+    btn.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  });
+});
+
+/* ── Magnetic hover on hero CTAs ── */
+document.querySelectorAll('.btn-hero').forEach(btn => {
+  btn.addEventListener('mousemove', e => {
+    const r  = btn.getBoundingClientRect();
+    const dx = (e.clientX - r.left - r.width  / 2) * .25;
+    const dy = (e.clientY - r.top  - r.height / 2) * .25;
+    btn.style.transform = `translate(${dx}px,${dy}px) translateY(-3px) scale(1.03)`;
+  });
+  btn.addEventListener('mouseleave', () => {
+    btn.style.transform = '';
+  });
+});
+
+/* ── Particle burst on primary CTAs ── */
+function burst(btn, e) {
+  const r = btn.getBoundingClientRect();
+  const cx = e.clientX - r.left;
+  const cy = e.clientY - r.top;
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('span');
+    const angle  = (Math.random() * 360) * Math.PI / 180;
+    const dist   = 40 + Math.random() * 50;
+    const size   = 4 + Math.random() * 5;
+    const colors = ['#60a5fa','#818cf8','#fff','#93c5fd','#c4b5fd'];
+    p.style.cssText = `
+      position:absolute;border-radius:50%;pointer-events:none;
+      width:${size}px;height:${size}px;
+      left:${cx}px;top:${cy}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      transform:translate(-50%,-50%);
+      transition:transform .5s cubic-bezier(.2,.8,.3,1), opacity .5s;
+      opacity:1;z-index:10;
+    `;
+    btn.appendChild(p);
+    requestAnimationFrame(() => {
+      p.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
+      p.style.opacity = '0';
+    });
+    setTimeout(() => p.remove(), 520);
+  }
+}
+document.querySelectorAll('.btn-primary').forEach(btn => {
+  btn.addEventListener('click', e => burst(btn, e));
+});
+document.querySelectorAll('.btn-white').forEach(btn => {
+  btn.addEventListener('click', e => burst(btn, e));
+});
+</script>
+</body>
+</html>
