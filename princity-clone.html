@@ -1730,41 +1730,61 @@ document.querySelectorAll('.btn-white').forEach(btn => {
     return _ctx;
   }
 
+  // Build a short impulse-response reverb (glass-room quality, like Apple)
+  function _makeReverb(c) {
+    const len = Math.floor(c.sampleRate * 0.55);
+    const ir  = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < len; i++)
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.8);
+    }
+    const conv = c.createConvolver();
+    conv.buffer = ir;
+    return conv;
+  }
+
   function _doChime(c) {
     if (!_chimeNeeded) return;
     _chimeNeeded = false;
-    // Warm A-major ascending arpeggio with overtones
-    [[220,.00,2.0,.07],[440,.12,1.9,.10],[554.4,.24,1.7,.08],[659.3,.36,1.5,.07],[880,.48,1.2,.05]].forEach(([f,t,d,v])=>{
-      [1,2].forEach((mult,hi)=>{
-        const osc=c.createOscillator(), g=c.createGain();
-        osc.type='sine'; osc.frequency.value=f*mult;
-        const vol=hi?v*.18:v;
-        const dur=hi?d*.45:d;
-        g.gain.setValueAtTime(0,c.currentTime+t);
-        g.gain.linearRampToValueAtTime(vol,c.currentTime+t+.06);
-        g.gain.exponentialRampToValueAtTime(.001,c.currentTime+t+dur);
-        osc.connect(g); g.connect(c.destination);
-        osc.start(c.currentTime+t); osc.stop(c.currentTime+t+dur);
+
+    // Wet reverb bus (20% mix) — gives that airy Apple "glass" space
+    const conv    = _makeReverb(c);
+    const wetGain = c.createGain();
+    wetGain.gain.value = 0.2;
+    conv.connect(wetGain);
+    wetGain.connect(c.destination);
+
+    // C-major ascending triad — C5 → E5 → G5 (clean sine only, Apple-style)
+    [[523.25, 0, .55, .13], [659.25, .17, .50, .11], [783.99, .34, .52, .09]]
+      .forEach(([f, t, d, v]) => {
+        const osc = c.createOscillator(), g = c.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        g.gain.setValueAtTime(0, c.currentTime + t);
+        g.gain.linearRampToValueAtTime(v, c.currentTime + t + 0.003); // 3ms bell attack
+        g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + t + d);
+        osc.connect(g);
+        g.connect(c.destination); // dry
+        g.connect(conv);          // into reverb
+        osc.start(c.currentTime + t);
+        osc.stop(c.currentTime + t + d + 0.01);
       });
-    });
   }
 
   function _doClick(c) {
-    // Sine "thud" + noise "tick" = premium mechanical click
-    const osc=c.createOscillator(), g1=c.createGain();
-    osc.type='sine'; osc.frequency.value=600;
-    osc.frequency.exponentialRampToValueAtTime(200, c.currentTime+.025);
-    g1.gain.setValueAtTime(.28,c.currentTime);
-    g1.gain.exponentialRampToValueAtTime(.001,c.currentTime+.045);
-    osc.connect(g1); g1.connect(c.destination);
-    osc.start(); osc.stop(c.currentTime+.05);
-
-    const n=Math.floor(c.sampleRate*.02), buf=c.createBuffer(1,n,c.sampleRate), d=buf.getChannelData(0);
-    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,5)*.55;
-    const flt=c.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=3200; flt.Q.value=.7;
-    const g2=c.createGain(); g2.gain.value=.38;
-    const src=c.createBufferSource(); src.buffer=buf;
-    src.connect(flt); flt.connect(g2); g2.connect(c.destination); src.start();
+    // Pure sine pitch-drop: 1200 → 650 Hz in 18ms — Apple "tock" (zero noise)
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(650, c.currentTime + 0.018);
+    g.gain.setValueAtTime(0, c.currentTime);
+    g.gain.linearRampToValueAtTime(0.15, c.currentTime + 0.001); // 1ms instant attack
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.038);
+    osc.connect(g);
+    g.connect(c.destination);
+    osc.start(c.currentTime);
+    osc.stop(c.currentTime + 0.042);
   }
 
   // Every click: chime on first interaction, click sound thereafter
