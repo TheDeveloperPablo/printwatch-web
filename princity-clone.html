@@ -499,6 +499,21 @@ footer { background:var(--slate); color:#64748b; padding:72px 28px 36px; }
 .footer-col a:hover { color:#fff; }
 .footer-bottom { display:flex; justify-content:space-between; align-items:center; font-size:12px; flex-wrap:wrap; gap:12px; }
 
+/* ── USER CHIP (logged-in nav) ── */
+.nav-auth-area { display:flex; align-items:center; gap:14px; }
+.user-chip {
+  display:flex; align-items:center; gap:10px;
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:100px; padding:6px 14px 6px 6px;
+}
+.user-av {
+  width:30px; height:30px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,var(--prime),var(--teal));
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:12px; font-weight:800; letter-spacing:.5px;
+}
+.user-chip-name { font-size:13px; font-weight:600; color:var(--text); }
+
 /* ── RESPONSIVE ── */
 @media(max-width:1024px) {
   .problems-grid { grid-template-columns:repeat(3,1fr); }
@@ -771,6 +786,11 @@ footer { background:var(--slate); color:#64748b; padding:72px 28px 36px; }
     <div class="divider"><span>or continue with email</span></div>
 
     <form id="login-form" onsubmit="handleLogin(event)" novalidate>
+      <!-- Full name (signup only) -->
+      <div class="field" id="name-field" style="display:none">
+        <input type="text" id="fullname" name="fullname" placeholder=" " autocomplete="name">
+        <label for="fullname">Full name</label>
+      </div>
       <!-- Email -->
       <div class="field">
         <input type="email" id="email" name="email" placeholder=" " autocomplete="email" required>
@@ -838,11 +858,13 @@ footer { background:var(--slate); color:#64748b; padding:72px 28px 36px; }
         <a href="#" aria-label="X"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
         <a href="#" aria-label="Facebook"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
       </div>
-      <button onclick="openModal()" class="btn btn-outline" style="font-size:13px;padding:9px 18px">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        Sign in
-      </button>
-      <a href="#cta" class="btn btn-primary">Try for free</a>
+      <div class="nav-auth-area">
+        <button onclick="openModal()" class="btn btn-outline" style="font-size:13px;padding:9px 18px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Sign in
+        </button>
+        <a href="#cta" class="btn btn-primary">Try for free</a>
+      </div>
     </div>
   </div>
 </nav>
@@ -1149,18 +1171,49 @@ footer { background:var(--slate); color:#64748b; padding:72px 28px 36px; }
 // 2. New project → Settings → API
 // 3. Pega aquí tu URL y anon key
 // ─────────────────────────────────────────────────
-const SUPABASE_URL  = 'PEGA_AQUI_TU_URL';       // ej: https://xxxx.supabase.co
-const SUPABASE_KEY  = 'PEGA_AQUI_TU_ANON_KEY';  // empieza por eyJ...
+const SUPABASE_URL = 'https://lwdnjkblzlulrqqdephe.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_8OM_dE-S9ATOTBiVw6bBjA_gV4IHxVO';
 
-const _supabase = (SUPABASE_URL.startsWith('http'))
-  ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-  : null; // modo demo si no hay keys
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-if (_supabase) {
-  _supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN') showSuccess();
-    if (event === 'SIGNED_OUT') console.log('Logged out');
-  });
+// ── Auth state: update nav whenever session changes ──
+_supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN'  && session) updateNavUser(session.user);
+  if (event === 'SIGNED_OUT')            updateNavGuest();
+});
+
+// ── Restore session on page load (stays logged in after refresh) ──
+_supabase.auth.getSession().then(({ data: { session } }) => {
+  if (session) updateNavUser(session.user);
+});
+
+function updateNavUser(user) {
+  const name     = user.user_metadata?.full_name || user.email.split('@')[0];
+  const initials = name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const navRight = document.querySelector('.nav-right');
+  // Replace auth buttons with user chip + logout
+  navRight.querySelector('.nav-auth-area').innerHTML = `
+    <div class="user-chip">
+      <div class="user-av">${initials}</div>
+      <span class="user-chip-name">${name.split(' ')[0]}</span>
+    </div>
+    <button class="btn btn-outline" style="font-size:13px;padding:9px 18px" onclick="signOut()">Sign out</button>
+  `;
+}
+
+function updateNavGuest() {
+  const navRight = document.querySelector('.nav-right');
+  navRight.querySelector('.nav-auth-area').innerHTML = `
+    <button onclick="openModal()" class="btn btn-outline" style="font-size:13px;padding:9px 18px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Sign in
+    </button>
+    <a href="#cta" class="btn btn-primary">Try for free</a>
+  `;
+}
+
+async function signOut() {
+  await _supabase.auth.signOut();
 }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1537,9 +1590,14 @@ function showSuccess() {
   const btn = document.getElementById('btn-signin');
   btn.classList.remove('loading');
   btn.querySelector('.btn-label').textContent = 'Sign in';
+  // Personalise greeting with name if available
+  _supabase.auth.getUser().then(({ data: { user } }) => {
+    const name = user?.user_metadata?.full_name?.split(' ')[0] || '';
+    document.querySelector('.success-title').textContent = name ? `Welcome, ${name}!` : 'Welcome!';
+  });
   document.getElementById('modal-success').classList.add('show');
-  setTimeout(closeModal, 2200);
-  setTimeout(() => document.getElementById('modal-success').classList.remove('show'), 2600);
+  setTimeout(closeModal, 2400);
+  setTimeout(() => document.getElementById('modal-success').classList.remove('show'), 2800);
 }
 
 function showError(msg) {
@@ -1561,12 +1619,13 @@ function showError(msg) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const btn   = document.getElementById('btn-signin');
-  const email = document.getElementById('email').value.trim();
-  const pass  = document.getElementById('password').value;
+  const btn      = document.getElementById('btn-signin');
+  const email    = document.getElementById('email').value.trim();
+  const pass     = document.getElementById('password').value;
+  const fullname = document.getElementById('fullname').value.trim();
   const isSignUp = btn.dataset.mode === 'signup';
 
-  if (!email || !pass) {
+  if (!email || !pass || (isSignUp && !fullname)) {
     document.getElementById('modal').classList.add('shake');
     setTimeout(() => document.getElementById('modal').classList.remove('shake'), 450);
     return;
@@ -1575,22 +1634,34 @@ async function handleLogin(e) {
   btn.classList.add('loading');
   btn.querySelector('.btn-label').textContent = isSignUp ? 'Creating account…' : 'Signing in…';
 
-  // Sin Supabase configurado → modo demo
-  if (!_supabase) {
-    setTimeout(showSuccess, 1600);
-    return;
-  }
-
   try {
     let result;
     if (isSignUp) {
-      result = await _supabase.auth.signUp({ email, password: pass });
-      if (!result.error) { showSuccess(); return; }
+      result = await _supabase.auth.signUp({
+        email, password: pass,
+        options: { data: { full_name: fullname } }
+      });
+      if (!result.error) {
+        // Some Supabase projects require email confirmation
+        if (result.data.user && !result.data.session) {
+          btn.classList.remove('loading');
+          btn.querySelector('.btn-label').textContent = 'Create account';
+          showError('Check your email to confirm your account.');
+          return;
+        }
+        showSuccess(); return;
+      }
     } else {
       result = await _supabase.auth.signInWithPassword({ email, password: pass });
       if (!result.error) { showSuccess(); return; }
     }
-    showError(result.error.message || 'Incorrect email or password.');
+    const msg = result.error?.message || '';
+    showError(
+      msg.includes('Invalid login') ? 'Wrong email or password.' :
+      msg.includes('already registered') ? 'This email is already in use.' :
+      msg.includes('Password should') ? 'Password must be at least 6 characters.' :
+      msg || 'Something went wrong, try again.'
+    );
   } catch {
     showError('Connection error. Please try again.');
   }
@@ -1598,7 +1669,7 @@ async function handleLogin(e) {
 
 async function socialLogin(btn, provider) {
   const orig = btn.innerHTML;
-  btn.innerHTML = '<div class="loader-ring" style="width:16px;height:16px;border-width:2px"></div> Connecting…';
+  btn.innerHTML = '<div class="btn-spinner" style="display:inline-block"></div> Connecting…';
   btn.disabled = true;
 
   if (!_supabase) {
@@ -1616,23 +1687,28 @@ async function socialLogin(btn, provider) {
 
 /* Toggle sign in / sign up */
 function toggleMode() {
-  const btn   = document.getElementById('btn-signin');
-  const title = document.querySelector('.modal-title');
-  const sub   = document.querySelector('.modal-sub');
-  const link  = document.getElementById('mode-link');
-  const isSignUp = btn.dataset.mode === 'signup';
+  const btn       = document.getElementById('btn-signin');
+  const title     = document.querySelector('.modal-title');
+  const sub       = document.querySelector('.modal-sub');
+  const link      = document.getElementById('mode-link');
+  const nameField = document.getElementById('name-field');
+  const isSignUp  = btn.dataset.mode === 'signup';
   if (isSignUp) {
     btn.dataset.mode = '';
     btn.querySelector('.btn-label').textContent = 'Sign in';
     title.textContent = 'Welcome back';
     sub.textContent   = 'Sign in to your PrintWatch account';
     link.innerHTML    = 'Don\'t have an account? <a href="#" onclick="toggleMode();return false">Create one free</a>';
+    nameField.style.display = 'none';
+    document.getElementById('fullname').value = '';
   } else {
     btn.dataset.mode = 'signup';
     btn.querySelector('.btn-label').textContent = 'Create account';
     title.textContent = 'Create your account';
     sub.textContent   = 'Free forever. No credit card required.';
     link.innerHTML    = 'Already have an account? <a href="#" onclick="toggleMode();return false">Sign in</a>';
+    nameField.style.display = 'block';
+    setTimeout(() => document.getElementById('fullname').focus(), 50);
   }
 }
 
