@@ -34,20 +34,96 @@
 html { scroll-behavior:smooth; }
 body { font-family:'Inter',system-ui,sans-serif; color:var(--text); background:var(--bg); line-height:1.6; overflow-x:hidden; }
 
-/* ── LOADER ── */
+/* ── SPLASH SCREEN ── */
 #loader {
-  position:fixed; inset:0; background:var(--slate); z-index:9999;
+  position:fixed; inset:0; z-index:9999;
+  background:linear-gradient(160deg,#1c2a30 0%,#2c3a40 100%);
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  transition:opacity 1s cubic-bezier(.4,0,.2,1), visibility 1s;
+  overflow:hidden;
+}
+#loader.hide { opacity:0; visibility:hidden; pointer-events:none; }
+
+/* dot-grid texture */
+#loader::before {
+  content:''; position:absolute; inset:0;
+  background-image:radial-gradient(rgba(255,255,255,.032) 1.5px, transparent 1.5px);
+  background-size:30px 30px; pointer-events:none;
+}
+/* ambient glow */
+#loader::after {
+  content:''; position:absolute;
+  width:520px; height:520px; border-radius:50%;
+  background:radial-gradient(circle, rgba(184,92,82,.14) 0%, transparent 70%);
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  animation:splashGlow 4s ease-in-out infinite alternate; pointer-events:none;
+}
+@keyframes splashGlow {
+  from { transform:translate(-50%,-50%) scale(1);    opacity:.6; }
+  to   { transform:translate(-50%,-50%) scale(1.35); opacity:1;  }
+}
+
+/* ── icon ── */
+.splash-icon {
+  position:relative; width:108px; height:108px;
   display:flex; align-items:center; justify-content:center;
-  transition:opacity .6s, visibility .6s;
+  margin-bottom:38px;
+  animation:splashIn .7s .05s cubic-bezier(.2,.85,.3,1.15) both;
 }
-#loader.hide { opacity:0; visibility:hidden; }
-.loader-ring {
-  width:48px; height:48px; border-radius:50%;
-  border:3px solid rgba(184,92,82,.25);
-  border-top-color:var(--prime);
-  animation:spin .8s linear infinite;
+.splash-ring {
+  position:absolute; border-radius:50%; border:1.5px solid;
+  animation:splashRingPulse 2.5s ease-in-out infinite;
 }
-@keyframes spin { to { transform:rotate(360deg); } }
+.splash-ring:nth-child(1){ width:68px;  height:68px;  border-color:rgba(184,92,82,.65);  animation-delay:0s;   }
+.splash-ring:nth-child(2){ width:90px;  height:90px;  border-color:rgba(122,181,176,.38); animation-delay:.38s; }
+.splash-ring:nth-child(3){ width:112px; height:112px; border-color:rgba(184,92,82,.2);   animation-delay:.76s; }
+@keyframes splashRingPulse {
+  0%,100%{ transform:scale(1);    opacity:.85; }
+  50%    { transform:scale(1.08); opacity:.35; }
+}
+.splash-emoji-inner {
+  font-size:42px; position:relative; z-index:1;
+  animation:splashEmoji 2.5s ease-in-out infinite;
+}
+@keyframes splashEmoji {
+  0%,100%{ filter:drop-shadow(0 0 14px rgba(184,92,82,.45)); transform:scale(1);    }
+  50%    { filter:drop-shadow(0 0 30px rgba(184,92,82,.80)); transform:scale(1.07); }
+}
+
+/* ── brand name ── */
+.splash-brand {
+  font-size:54px; font-weight:900; letter-spacing:-2px;
+  color:#fff; line-height:1; margin-bottom:14px;
+  animation:splashIn .65s .3s cubic-bezier(.2,.85,.3,1) both;
+}
+.splash-brand .sw { color:#7ab5b0; }
+
+/* ── tagline ── */
+.splash-tagline-sub {
+  font-size:11px; font-weight:700; letter-spacing:.24em;
+  text-transform:uppercase; color:rgba(255,255,255,.38);
+  margin-bottom:52px;
+  animation:splashIn .55s .56s ease both;
+}
+
+/* ── progress bar ── */
+.splash-track {
+  width:220px; height:2px;
+  background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden;
+  animation:splashIn .4s .72s ease both;
+}
+.splash-fill {
+  height:100%; border-radius:2px;
+  background:linear-gradient(90deg,#b85c52,#7ab5b0);
+  width:0%;
+  animation:splashProgress 2s .84s cubic-bezier(.4,0,.15,1) forwards;
+}
+@keyframes splashProgress { to { width:100%; } }
+
+@keyframes splashIn {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
 
 /* ── NAV ── */
 nav {
@@ -651,8 +727,18 @@ footer { background:var(--slate); color:#64748b; padding:72px 28px 36px; }
 </head>
 <body>
 
-<!-- LOADER -->
-<div id="loader"><div class="loader-ring"></div></div>
+<!-- SPLASH SCREEN -->
+<div id="loader">
+  <div class="splash-icon">
+    <div class="splash-ring"></div>
+    <div class="splash-ring"></div>
+    <div class="splash-ring"></div>
+    <div class="splash-emoji-inner">🖨️</div>
+  </div>
+  <div class="splash-brand">Print<span class="sw">Watch</span></div>
+  <div class="splash-tagline-sub">Printer Fleet Intelligence</div>
+  <div class="splash-track"><div class="splash-fill"></div></div>
+</div>
 
 <!-- MODAL -->
 <div class="modal-backdrop" id="modal-backdrop" onclick="handleBackdropClick(event)">
@@ -1303,8 +1389,8 @@ if (_supabase) {
   }
   animate();
 
-  // Hide loader when ready
-  document.getElementById('loader').classList.add('hide');
+  // Hide splash after animation completes (min 2.9s)
+  setTimeout(() => document.getElementById('loader').classList.add('hide'), 2900);
 })();
 </script>
 
@@ -1631,6 +1717,72 @@ document.querySelectorAll('.btn-primary').forEach(btn => {
 document.querySelectorAll('.btn-white').forEach(btn => {
   btn.addEventListener('click', e => burst(btn, e));
 });
+</script>
+
+<script>
+/* ── Audio Engine ── */
+(function(){
+  let _ctx = null;
+  let _chimeNeeded = true;
+
+  function getCtx() {
+    if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return _ctx;
+  }
+
+  function _doChime(c) {
+    if (!_chimeNeeded) return;
+    _chimeNeeded = false;
+    // Warm A-major ascending arpeggio with overtones
+    [[220,.00,2.0,.07],[440,.12,1.9,.10],[554.4,.24,1.7,.08],[659.3,.36,1.5,.07],[880,.48,1.2,.05]].forEach(([f,t,d,v])=>{
+      [1,2].forEach((mult,hi)=>{
+        const osc=c.createOscillator(), g=c.createGain();
+        osc.type='sine'; osc.frequency.value=f*mult;
+        const vol=hi?v*.18:v;
+        const dur=hi?d*.45:d;
+        g.gain.setValueAtTime(0,c.currentTime+t);
+        g.gain.linearRampToValueAtTime(vol,c.currentTime+t+.06);
+        g.gain.exponentialRampToValueAtTime(.001,c.currentTime+t+dur);
+        osc.connect(g); g.connect(c.destination);
+        osc.start(c.currentTime+t); osc.stop(c.currentTime+t+dur);
+      });
+    });
+  }
+
+  function _doClick(c) {
+    // Sine "thud" + noise "tick" = premium mechanical click
+    const osc=c.createOscillator(), g1=c.createGain();
+    osc.type='sine'; osc.frequency.value=600;
+    osc.frequency.exponentialRampToValueAtTime(200, c.currentTime+.025);
+    g1.gain.setValueAtTime(.28,c.currentTime);
+    g1.gain.exponentialRampToValueAtTime(.001,c.currentTime+.045);
+    osc.connect(g1); g1.connect(c.destination);
+    osc.start(); osc.stop(c.currentTime+.05);
+
+    const n=Math.floor(c.sampleRate*.02), buf=c.createBuffer(1,n,c.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,5)*.55;
+    const flt=c.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=3200; flt.Q.value=.7;
+    const g2=c.createGain(); g2.gain.value=.38;
+    const src=c.createBufferSource(); src.buffer=buf;
+    src.connect(flt); flt.connect(g2); g2.connect(c.destination); src.start();
+  }
+
+  // Every click: chime on first interaction, click sound thereafter
+  document.addEventListener('click', function(e) {
+    try {
+      const c = getCtx();
+      const play = () => {
+        if (_chimeNeeded) {
+          _doChime(c);
+        } else if (e.target.closest('.btn,button,a[href],.func-card,.feature-card,.problem-card,.testi-card')) {
+          _doClick(c);
+        }
+      };
+      if (c.state === 'suspended') c.resume().then(play).catch(()=>{});
+      else play();
+    } catch(err) {}
+  }, { capture:true, passive:true });
+})();
 </script>
 </body>
 </html>
