@@ -1773,18 +1773,25 @@ document.querySelectorAll('.btn-white').forEach(btn => {
   }
 
   function _doClick(c) {
-    // Pure sine pitch-drop: 1200 → 650 Hz in 18ms — Apple "tock" (zero noise)
+    // Randomised parameters → never the same click twice
+    const r       = Math.random;
+    const startHz = 1000 + r() * 380;          // 1000–1380 Hz
+    const endHz   = startHz * (0.48 + r() * 0.10); // 48–58% of start (consistent interval feel)
+    const drop    = 0.013 + r() * 0.010;        // pitch-drop duration 13–23 ms
+    const decay   = 0.028 + r() * 0.018;        // total decay 28–46 ms
+    const vol     = 0.12  + r() * 0.06;         // volume 0.12–0.18
+
     const osc = c.createOscillator(), g = c.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(1200, c.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(650, c.currentTime + 0.018);
+    osc.frequency.setValueAtTime(startHz, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(endHz, c.currentTime + drop);
     g.gain.setValueAtTime(0, c.currentTime);
-    g.gain.linearRampToValueAtTime(0.15, c.currentTime + 0.001); // 1ms instant attack
-    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.038);
+    g.gain.linearRampToValueAtTime(vol, c.currentTime + 0.001);
+    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + decay);
     osc.connect(g);
     g.connect(c.destination);
     osc.start(c.currentTime);
-    osc.stop(c.currentTime + 0.042);
+    osc.stop(c.currentTime + decay + 0.006);
   }
 
   // Every click: chime on first interaction, click sound thereafter
