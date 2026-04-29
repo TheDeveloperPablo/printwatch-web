@@ -729,6 +729,90 @@ footer { background:var(--slate); color:#64748b; padding:72px 28px 36px; }
 .success-title { font-size:22px; font-weight:800; color:#fff; margin-bottom:8px; }
 .success-sub { font-size:14px; color:rgba(255,255,255,.45); }
 
+/* ── modal overlays (forgot / new-password) ── */
+.modal-overlay {
+  position:absolute; inset:0; border-radius:24px;
+  background:linear-gradient(160deg,#1c2a30 0%,#253038 100%);
+  display:flex; flex-direction:column; padding:44px 40px 40px;
+  opacity:0; pointer-events:none;
+  transition:opacity .28s;
+  overflow:hidden;
+}
+.modal-overlay.show { opacity:1; pointer-events:auto; }
+.modal-overlay::before {
+  content:''; position:absolute; top:-80px; left:50%;
+  transform:translateX(-50%);
+  width:280px; height:160px;
+  background:radial-gradient(ellipse,rgba(184,92,82,.3) 0%,transparent 70%);
+  pointer-events:none;
+}
+.modal-back {
+  background:none; border:none; color:rgba(255,255,255,.4);
+  font-size:13px; font-weight:500; cursor:pointer; padding:0;
+  text-align:left; margin-bottom:28px; transition:color .15s;
+  display:flex; align-items:center; gap:6px; font-family:inherit;
+}
+.modal-back:hover { color:rgba(255,255,255,.85); }
+.modal-back svg { flex-shrink:0; }
+.modal-overlay .modal-title { position:relative; }
+.modal-overlay .modal-sub   { position:relative; margin-bottom:28px; }
+.reset-sent {
+  text-align:center; padding:20px 0;
+  display:none; flex-direction:column; align-items:center; gap:12px;
+}
+.reset-sent.show { display:flex; }
+.reset-sent-icon { font-size:40px; }
+.reset-sent p { font-size:14px; color:rgba(255,255,255,.5); line-height:1.6; }
+
+/* ── profile panel (dropdown from user chip) ── */
+.profile-panel {
+  position:fixed; top:76px; right:28px; width:288px; z-index:500;
+  background:#fff; border:1px solid var(--border); border-radius:20px;
+  padding:28px 24px 20px; box-shadow:var(--sh-md);
+  opacity:0; visibility:hidden; transform:translateY(-8px);
+  transition:opacity .2s, visibility .2s, transform .2s;
+}
+.profile-panel.open { opacity:1; visibility:visible; transform:translateY(0); }
+.profile-panel-av {
+  width:60px; height:60px; border-radius:50%;
+  background:linear-gradient(135deg,var(--prime),var(--teal));
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:22px; font-weight:800; letter-spacing:.5px;
+  margin:0 auto 14px;
+}
+.profile-panel-name {
+  font-size:17px; font-weight:700; color:var(--text);
+  text-align:center; margin-bottom:4px;
+  outline:none; border-radius:6px;
+  padding:2px 6px; transition:background .15s;
+}
+.profile-panel-name[contenteditable=true] {
+  background:var(--bg2); cursor:text;
+}
+.profile-panel-email { font-size:13px; color:var(--sub); text-align:center; margin-bottom:4px; }
+.profile-panel-since { font-size:11px; color:var(--border); text-align:center; margin-bottom:20px; }
+.profile-panel-divider { height:1px; background:var(--border); margin:0 -24px 16px; }
+.profile-action {
+  width:100%; display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px; border:none;
+  background:none; font-family:inherit; font-size:14px;
+  color:var(--text); cursor:pointer; transition:background .15s; text-align:left;
+}
+.profile-action:hover { background:var(--bg2); }
+.profile-action svg { color:var(--sub); flex-shrink:0; }
+.profile-action.danger { color:#ef4444; }
+.profile-action.danger svg { color:#ef4444; }
+.profile-edit-bar {
+  display:none; gap:8px; margin-top:8px; padding:0 6px;
+}
+.profile-edit-bar.show { display:flex; }
+.profile-edit-bar button {
+  flex:1; padding:8px; border-radius:8px; font-size:13px;
+  font-weight:600; cursor:pointer; border:none; font-family:inherit;
+}
+.profile-save { background:var(--prime); color:#fff; }
+.profile-cancel { background:var(--bg2); color:var(--sub); }
+
 /* shake on error */
 @keyframes shake {
   0%,100%{ transform:scale(1) translateY(0) translateX(0); }
@@ -816,7 +900,7 @@ footer { background:var(--slate); color:#64748b; padding:72px 28px 36px; }
           </div>
           <span>Remember me</span>
         </label>
-        <a href="#" class="forgot">Forgot password?</a>
+        <a href="#" class="forgot" onclick="setModalState('forgot');return false">Forgot password?</a>
       </div>
 
       <button type="submit" class="btn-signin" id="btn-signin">
@@ -838,7 +922,75 @@ footer { background:var(--slate); color:#64748b; padding:72px 28px 36px; }
       <div class="success-sub">Redirecting to your dashboard…</div>
     </div>
 
+    <!-- Forgot password overlay -->
+    <div class="modal-overlay" id="modal-forgot">
+      <button class="modal-back" onclick="setModalState('login')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to sign in
+      </button>
+      <div class="modal-title" style="position:relative">Reset password</div>
+      <div class="modal-sub" style="position:relative;margin-bottom:28px">We'll send you a link to reset your password.</div>
+      <div id="reset-form-area">
+        <div class="field">
+          <input type="email" id="reset-email" placeholder=" " autocomplete="email">
+          <label for="reset-email">Email address</label>
+        </div>
+        <button class="btn-signin" id="btn-reset" onclick="handleResetPassword()" type="button">
+          <div class="btn-signin-inner">
+            <div class="btn-spinner"></div>
+            <span class="btn-label">Send reset link</span>
+          </div>
+        </button>
+      </div>
+      <div class="reset-sent" id="reset-sent">
+        <div class="reset-sent-icon">📬</div>
+        <div class="success-title" style="font-size:18px">Check your inbox</div>
+        <p>We sent a reset link to your email. Click it to set a new password.</p>
+      </div>
+    </div>
+
+    <!-- Set new password overlay (shown after clicking reset link) -->
+    <div class="modal-overlay" id="modal-newpass">
+      <div class="modal-title" style="position:relative;margin-bottom:6px">Set new password</div>
+      <div class="modal-sub" style="position:relative;margin-bottom:28px">Choose a password with at least 6 characters.</div>
+      <div class="field field-pass">
+        <input type="password" id="new-password" placeholder=" " autocomplete="new-password" style="padding-right:48px">
+        <label for="new-password">New password</label>
+      </div>
+      <button class="btn-signin" id="btn-newpass" onclick="handleSetNewPassword()" type="button">
+        <div class="btn-signin-inner">
+          <div class="btn-spinner"></div>
+          <span class="btn-label">Update password</span>
+        </div>
+      </button>
+    </div>
+
   </div>
+</div>
+
+<!-- PROFILE PANEL -->
+<div class="profile-panel" id="profile-panel">
+  <div class="profile-panel-av" id="profile-av">?</div>
+  <div class="profile-panel-name" id="profile-name" contenteditable="false">—</div>
+  <div class="profile-panel-email" id="profile-email"></div>
+  <div class="profile-panel-since" id="profile-since"></div>
+  <div class="profile-edit-bar" id="profile-edit-bar">
+    <button class="profile-save"   onclick="saveProfileName()">Save</button>
+    <button class="profile-cancel" onclick="cancelEditName()">Cancel</button>
+  </div>
+  <div class="profile-panel-divider"></div>
+  <button class="profile-action" onclick="editProfileName()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+    Edit name
+  </button>
+  <button class="profile-action" onclick="sendPasswordReset()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Change password
+  </button>
+  <button class="profile-action danger" onclick="signOut();closeProfilePanel()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+    Sign out
+  </button>
 </div>
 
 <!-- NAV -->
@@ -1178,8 +1330,9 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── Auth state: update nav whenever session changes ──
 _supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_IN'  && session) updateNavUser(session.user);
-  if (event === 'SIGNED_OUT')            updateNavGuest();
+  if (event === 'SIGNED_IN'       && session) updateNavUser(session.user);
+  if (event === 'SIGNED_OUT')                 updateNavGuest();
+  if (event === 'PASSWORD_RECOVERY')          { openModal(); setModalState('newpass'); }
 });
 
 // ── Restore session on page load (stays logged in after refresh) ──
@@ -1190,15 +1343,19 @@ _supabase.auth.getSession().then(({ data: { session } }) => {
 function updateNavUser(user) {
   const name     = user.user_metadata?.full_name || user.email.split('@')[0];
   const initials = name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const since    = new Date(user.created_at).toLocaleDateString('en-GB', { month:'long', year:'numeric' });
   const navRight = document.querySelector('.nav-right');
-  // Replace auth buttons with user chip + logout
   navRight.querySelector('.nav-auth-area').innerHTML = `
-    <div class="user-chip">
+    <div class="user-chip" onclick="toggleProfilePanel()" style="cursor:pointer">
       <div class="user-av">${initials}</div>
       <span class="user-chip-name">${name.split(' ')[0]}</span>
     </div>
-    <button class="btn btn-outline" style="font-size:13px;padding:9px 18px" onclick="signOut()">Sign out</button>
   `;
+  // Populate profile panel
+  document.getElementById('profile-av').textContent    = initials;
+  document.getElementById('profile-name').textContent  = name;
+  document.getElementById('profile-email').textContent = user.email;
+  document.getElementById('profile-since').textContent = 'Member since ' + since;
 }
 
 function updateNavGuest() {
@@ -1683,6 +1840,112 @@ async function socialLogin(btn, provider) {
     options: { redirectTo: window.location.origin }
   });
   if (error) { btn.innerHTML = orig; btn.disabled = false; showError(error.message); }
+}
+
+/* Modal state machine: 'login' | 'forgot' | 'newpass' */
+function setModalState(state) {
+  document.getElementById('modal-forgot').classList.toggle('show',  state === 'forgot');
+  document.getElementById('modal-newpass').classList.toggle('show', state === 'newpass');
+  if (state === 'forgot') {
+    document.getElementById('reset-email').value = '';
+    document.getElementById('reset-sent').classList.remove('show');
+    document.getElementById('reset-form-area').style.display = '';
+    setTimeout(() => document.getElementById('reset-email').focus(), 50);
+  }
+  if (state === 'newpass') {
+    document.getElementById('new-password').value = '';
+    setTimeout(() => document.getElementById('new-password').focus(), 50);
+  }
+}
+
+async function handleResetPassword() {
+  const btn   = document.getElementById('btn-reset');
+  const email = document.getElementById('reset-email').value.trim();
+  if (!email) return;
+  btn.classList.add('loading');
+  btn.querySelector('.btn-label').textContent = 'Sending…';
+  const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href.split('#')[0]
+  });
+  btn.classList.remove('loading');
+  btn.querySelector('.btn-label').textContent = 'Send reset link';
+  if (error) { alert(error.message); return; }
+  document.getElementById('reset-form-area').style.display = 'none';
+  document.getElementById('reset-sent').classList.add('show');
+}
+
+async function handleSetNewPassword() {
+  const btn  = document.getElementById('btn-newpass');
+  const pass = document.getElementById('new-password').value;
+  if (!pass || pass.length < 6) return;
+  btn.classList.add('loading');
+  btn.querySelector('.btn-label').textContent = 'Updating…';
+  const { error } = await _supabase.auth.updateUser({ password: pass });
+  btn.classList.remove('loading');
+  btn.querySelector('.btn-label').textContent = 'Update password';
+  if (error) { alert(error.message); return; }
+  document.getElementById('modal-newpass').classList.remove('show');
+  showSuccess();
+}
+
+/* Profile panel */
+function toggleProfilePanel() {
+  document.getElementById('profile-panel').classList.toggle('open');
+}
+function closeProfilePanel() {
+  document.getElementById('profile-panel').classList.remove('open');
+}
+document.addEventListener('click', e => {
+  const panel = document.getElementById('profile-panel');
+  if (!panel) return;
+  if (!panel.contains(e.target) && !e.target.closest('.user-chip')) {
+    closeProfilePanel();
+  }
+});
+
+function editProfileName() {
+  const el = document.getElementById('profile-name');
+  el.contentEditable = 'true';
+  el.focus();
+  document.getElementById('profile-edit-bar').classList.add('show');
+  // move cursor to end
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+}
+function cancelEditName() {
+  const el = document.getElementById('profile-name');
+  el.contentEditable = 'false';
+  document.getElementById('profile-edit-bar').classList.remove('show');
+  // restore from Supabase
+  _supabase.auth.getUser().then(({ data: { user } }) => {
+    el.textContent = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '—';
+  });
+}
+async function saveProfileName() {
+  const el   = document.getElementById('profile-name');
+  const name = el.textContent.trim();
+  if (!name) return;
+  el.contentEditable = 'false';
+  document.getElementById('profile-edit-bar').classList.remove('show');
+  await _supabase.auth.updateUser({ data: { full_name: name } });
+  // Update nav chip
+  const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('profile-av').textContent = initials;
+  const chipName = document.querySelector('.user-chip-name');
+  if (chipName) chipName.textContent = name.split(' ')[0];
+}
+
+async function sendPasswordReset() {
+  const { data: { user } } = await _supabase.auth.getUser();
+  if (!user) return;
+  await _supabase.auth.resetPasswordForEmail(user.email, {
+    redirectTo: window.location.href.split('#')[0]
+  });
+  closeProfilePanel();
+  alert('Reset link sent to ' + user.email);
 }
 
 /* Toggle sign in / sign up */
