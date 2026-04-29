@@ -183,6 +183,29 @@ h1 em { font-style:normal; background:linear-gradient(135deg,#60a5fa,#818cf8); -
   display:none;
 }
 @media(min-width:900px){ .hero-badge { display:block; } }
+
+/* ── Japanese House ── */
+.hero-jp-house {
+  position:absolute; top:50%; right:52px;
+  transform:translateY(-58%);
+  z-index:3; display:none;
+  animation:houseFloat 5s ease-in-out infinite;
+  filter:drop-shadow(0 24px 48px rgba(0,0,0,.55)) drop-shadow(0 0 60px rgba(59,130,246,.18));
+}
+@media(min-width:1100px){ .hero-jp-house { display:block; } }
+.hero-jp-house img {
+  width:320px; height:320px; object-fit:contain;
+  border-radius:24px;
+  transition:transform .3s ease, filter .3s ease;
+}
+.hero-jp-house img:hover {
+  transform:scale(1.04) rotate(1deg);
+  filter:drop-shadow(0 32px 64px rgba(0,0,0,.7)) drop-shadow(0 0 80px rgba(59,130,246,.3));
+}
+@keyframes houseFloat {
+  0%,100% { transform:translateY(-58%); }
+  50%      { transform:translateY(-62%); }
+}
 .badge-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
 .badge-icon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
 .badge-label { font-size:11px; color:rgba(255,255,255,.45); }
@@ -747,6 +770,11 @@ footer { background:#0b0f1a; color:#64748b; padding:72px 28px 36px; }
       </div>
     </div>
   </div>
+  <!-- Japanese house floating image -->
+  <div class="hero-jp-house">
+    <img src="japanese-house.jpg" alt="Japanese house" draggable="false">
+  </div>
+
   <!-- Floating glassmorphism badge -->
   <div class="hero-badge">
     <div class="panel-header" style="color:rgba(255,255,255,.35)">Live overview</div>
